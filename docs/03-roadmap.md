@@ -237,6 +237,10 @@ We focus on **one** terrain and make it look great before adding presets or menu
   - [ ] T6 Trams, metro, rail, ferries, transfers
   - [ ] T7 Parks and leisure: central park, water park, botanical garden, Wonderland, stadium
 - [ ] **F. Research tree**: points from universities and research centres; energy, mobility and city branches
+- [ ] **H. Engagement** (user order, 2026-11-21): one feature per branch and PR
+  - [x] H1 City goals → [specs/goals.md](specs/goals.md) (D-100): four optional goals per stage, instant and held, cash rewards and landmarks earned early; Goals panel in a left rail with Citizens say; claim flow; one unlock rule (`sim/unlocks.ts`)
+  - [ ] H2 Incidents you can watch: E3 dispatch along real roads, fire spread, markers and toasts
+  - [ ] H3 Citizen stories and a city newspaper
 
 ## Art Track (runs alongside the phases; D-066)
 
