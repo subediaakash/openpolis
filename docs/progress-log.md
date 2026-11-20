@@ -2,6 +2,14 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Engagement H2: incidents you can watch (D-101)
+- **Vehicles:** fire trucks, police cars and ambulances drawn with traffic (`AgentRenderer` takes an emergency list; flashing light bars in `agents.beacons` over the night tint). **Bug fixed:** emergency kinds were missing from the vehicle atlas (`VEHICLE_KINDS`), hidden by an `as Record` cast; the map is now built per kind (`VEHICLE_VARIANT_COUNT`, one paint variant for emergency vehicles) with no cast.
+- **Fires:** `render/fx/Fires.ts` (flames from a new `fx_flame` frame, additive; dark smoke, steam while a truck works; heat from age and work). **Badges:** fire, theft and patient pins in `Indicators` (most urgent first); `Bubbles.mute` for buildings with one. `Renderer.setIncidents(marks, fires)`.
+- **Game:** `game/incidents.ts` (`incidentMarks`, `fireSites`, `IncidentFeed` for toasts and alerts, `incidentInfo` / `responderInfo` for the info panel). Incident events are handled every tick; a burned building is redrawn at once (it used to wait for the next day's refresh). Toasts and inbox alerts can carry a building (`Notice.focus`): "Show ›" goes there. `alarm` sound.
+- **HUD:** the info panel leads with an incident ("On fire! Firefighters at work: 77% put out") and stations show "Emergency calls" (vehicles out, this month in time and late).
+- **Dev tools:** `src/app/devtools.ts` (dev builds only): `openpolis.fire() / theft() / illness()`.
+- Checked in headless Chrome on /demo: fire started from the console, toast → Show, truck at the scene, flames, badge, live status; a missed theft toast with Show. 7 new tests (`tests/incidentView.test.ts`); typecheck and lint clean.
+
 ## 2026-11-21: Engagement H1: city goals (D-100)
 - **Sim:** `sim/goals/` (`catalog.ts` 20 goals as data, `measure.ts` readings + one `measure` switch, `state.ts` ready/claimed/streaks + claim + save helpers, `system.ts` `GoalSystem` after edits and each day, `takeReady()` for toasts). `sim/unlocks.ts` (`lockOf`) replaces `stages.isUnlocked`. Goals saved in `city.goals`; old saves backfill quietly.
 - **Game:** `game/goals.ts` words goals and locks for the HUD; `Game.claimGoal`, goal toasts (inbox key `goal-<id>`, resolved on claim), "New goals to try." on stage-up; `ProgressInfo.locks` drives the building picker ("Village or goal").

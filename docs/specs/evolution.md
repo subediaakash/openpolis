@@ -237,14 +237,27 @@ Robbed and untreated homes complain in their own words ("We were robbed and no p
 
 ### On the map and in the HUD
 
+Built 2026-11-21 (roadmap H2, D-101). Presentation only: `game/incidents.ts` words what the sim
+decided; `render/fx/Fires.ts` draws fires; badges are `render/overlays/Indicators.ts`.
+
 - **Burning buildings:** flickering flames over the footprint and a column of dark smoke,
-  growing as the fire goes on; dust and a toast if it burns down.
+  growing as the fire goes on, dying back with steam once a truck is working; drawn over the
+  night tint so fires glow after dark. Dust and a toast if it burns down, and the lot is
+  cleared from the screen at once.
+- **News:** a fire is announced as it starts ("Fire at a Walk-up Apartments!") with a short
+  siren; clicking the toast takes the camera there and opens the building. Another toast says
+  when it's out. Toasts and alerts about a place carry a **Show** link (the inbox too).
 - **Markers:** a theft marker over a building being robbed or recently robbed, and a red cross
   over a patient waiting for an ambulance (the badges above buildings).
 - **Vehicles:** fire trucks, patrol cars and ambulances with flashing light bars, driving their
   route out and back; on flyover decks they ride raised like other cars.
 - **Alerts:** fires that no truck can reach; buildings robbed or patients missed (at most one
-  of each kind a month). Successes stay quiet.
+  of each kind a month). Thefts and illness that are answered stay quiet. A "nobody can
+  reach it" alert clears itself when that incident ends. Complaint bubbles step aside for a
+  building with an incident badge.
+- **Dev tools** (`bun run dev` only): `openpolis.fire()`, `openpolis.theft(id?)`,
+  `openpolis.illness(id?)` in the browser console start one at the inspected building, a given
+  one, or the nearest busy building to the middle of the screen.
 - **Info panel:** a building shows its incident and the vehicle on its way; a responder shows
   its vehicles out and this month's calls answered in time and too late.
 

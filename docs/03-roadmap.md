@@ -213,7 +213,7 @@ We focus on **one** terrain and make it look great before adding presets or menu
   - [x] E1 Lifestyle tiers (Basic → Comfortable → Prosperous), hospital and university expectations, lifestyle tax, graduates → office demand
   - [x] E2 Garbage: landfill, recycling centre, incinerator; garbage need from the Village
   - [x] Info panel redesign, Move from the selected building, sticky "Citizens say"
-  - [ ] E3 Incidents that work together: fires, theft and illness dispatched to fire, police and hospital, with burning buildings and theft markers on the map; trauma centre
+  - [x] E3 Incidents that work together: fires, theft and illness dispatched to fire, police and hospital, with burning buildings and theft markers on the map; trauma centre (sim earlier; shown on the map and in the HUD with H2)
   - [x] E4 Air quality index (AQI) per area and for the city, from industry, power, traffic and incinerators; AQI view (`O`), top-bar AQI, clean-air need reads it
   - [x] E5 Taxes collected by hand at the Town Hall (new cities): six-month chest, coin badge, collect buttons
   - [x] E6 Industry makes construction materials that new buildings and upgrades consume (new cities): imports at a price, warehouse storage, export of surplus
@@ -239,7 +239,7 @@ We focus on **one** terrain and make it look great before adding presets or menu
 - [ ] **F. Research tree**: points from universities and research centres; energy, mobility and city branches
 - [ ] **H. Engagement** (user order, 2026-11-21): one feature per branch and PR
   - [x] H1 City goals → [specs/goals.md](specs/goals.md) (D-100): four optional goals per stage, instant and held, cash rewards and landmarks earned early; Goals panel in a left rail with Citizens say; claim flow; one unlock rule (`sim/unlocks.ts`)
-  - [ ] H2 Incidents you can watch: E3 dispatch along real roads, fire spread, markers and toasts
+  - [x] H2 Incidents you can watch (D-101): emergency vehicles with flashing light bars, flames and smoke on burning buildings, fire/theft/patient badges, fire news you can click to watch, info-panel status and station calls, dev-console triggers
   - [ ] H3 Citizen stories and a city newspaper
 
 ## Art Track (runs alongside the phases; D-066)
