@@ -4736,6 +4736,218 @@ summary {
 .alerts-button {
   position: relative;
 }
+
+/* ---------- The city newspaper (docs/specs/news.md): survey paper and ink, like the landing page ---------- */
+.news-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.news-button {
+  position: relative;
+}
+.news-button.is-open {
+  background: var(--bg-panel-hover);
+}
+.news-dot {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--bg-app);
+  border-radius: 50%;
+  background: var(--sign);
+}
+.news-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -8px;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  width: min(420px, calc(100vw - 24px));
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 16px 16px;
+  border-radius: var(--radius);
+  background: var(--paper);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  white-space: normal;
+  animation: panel-in 220ms var(--ease-out) both;
+}
+.news-masthead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 3px double rgba(14, 24, 32, 0.7);
+}
+.news-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  text-align: center;
+}
+.news-dateline {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.news-body {
+  display: flex;
+  flex-direction: column;
+}
+.news-empty {
+  padding: 18px 4px 4px;
+  font-size: 13px;
+  text-align: center;
+  opacity: 0.75;
+}
+.news-story {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(14, 24, 32, 0.16);
+}
+.news-story:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.news-kicker {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.news-story-date {
+  opacity: 0.6;
+}
+.section-milestone .news-kicker {
+  color: var(--sign-deep);
+}
+.section-trouble .news-kicker {
+  color: #b4402a;
+}
+.section-life .news-kicker {
+  color: #2d6a5a;
+}
+.section-review .news-kicker {
+  color: #4b4a8a;
+}
+.news-headline {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.news-story.is-lead .news-headline {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.news-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+.news-story.is-lead .news-text {
+  font-size: 13.5px;
+}
+.news-quote {
+  margin: 4px 0 0;
+  padding: 2px 0 2px 10px;
+  border-left: 3px solid var(--sign);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.45;
+}
+.news-quote cite {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  font-style: normal;
+  opacity: 0.7;
+}
+.news-quote cite::before {
+  content: '— ';
+}
+.news-show {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.news-show:hover {
+  color: var(--sign-deep);
+}
+.news-show:focus-visible {
+  outline: 2px solid var(--sign-deep);
+  outline-offset: 2px;
+}
+
+/* ---------- Named residents in the info panel ---------- */
+.info-residents {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.info-resident {
+  display: grid;
+  grid-template-columns: 30px 1fr;
+  gap: 9px;
+  align-items: start;
+}
+.info-resident-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(79, 209, 197, 0.16);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.info-resident-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  font-size: 12px;
+}
+.info-resident-meta {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.info-resident-says {
+  margin-top: 2px;
+  font-style: italic;
+  color: var(--text);
+  opacity: 0.9;
+}
 .alerts-button.is-open {
   background: var(--bg-panel-hover);
 }
@@ -5476,7 +5688,12 @@ summary {
   border-radius: 50%;
   background: var(--warn);
 }
+/* The paper hangs from the bar itself on phones, so it lines up with the bar's edge. */
+.top-bar.is-phone .news-wrap {
+  position: static;
+}
 .top-bar.is-phone .alerts-menu,
+.top-bar.is-phone .news-menu,
 .top-bar.is-phone .clock-menu {
   right: 0;
   left: auto;

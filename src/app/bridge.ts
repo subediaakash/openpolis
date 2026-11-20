@@ -26,6 +26,7 @@ import {
   airViewAtom,
   worldVersionAtom,
   toolPreviewAtom,
+  newsAtom,
 } from './atoms';
 
 type Store = ReturnType<typeof createStore>;
@@ -70,6 +71,7 @@ export function connectGameToStore(game: Game, store: Store): () => void {
     game.events.on('city', (c) => store.set(cityAtom, c)),
     game.events.on('inspect', (i) => store.set(inspectAtom, i)),
     game.events.on('toolPreview', (p) => store.set(toolPreviewAtom, p)),
+    game.events.on('news', (n) => store.set(newsAtom, n)),
     game.events.on('notice', (n) => {
       // Alerts with a key stay in the inbox: a newer one with the same key replaces the older.
       const key = n.key;
@@ -89,11 +91,13 @@ export function connectGameToStore(game: Game, store: Store): () => void {
   ];
   game.emitCity();
   game.emitBudget();
+  game.emitNews();
   return () => {
     offs.forEach((off) => off());
     timers.forEach(clearTimeout);
     store.set(gameAtom, null);
     store.set(toolPreviewAtom, null);
     store.set(inspectAtom, null);
+    store.set(newsAtom, null);
   };
 }

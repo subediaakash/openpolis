@@ -12,6 +12,8 @@ export type OverlayId =
   | 'clock'
   | 'stage'
   | 'alerts'
+  /** The city newspaper. */
+  | 'news'
   | 'account'
   /** Phones: the sheet with everything the slim top bar leaves out. */
   | 'more'
