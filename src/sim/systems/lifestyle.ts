@@ -44,7 +44,7 @@ export interface LifestyleReport {
   readonly residents: readonly [number, number, number];
 }
 
-export function lifestyleReport(city: City): LifestyleReport {
+export function lifestyleReport(city: Pick<City, 'world'>): LifestyleReport {
   const homes: [number, number, number] = [0, 0, 0];
   const residents: [number, number, number] = [0, 0, 0];
   for (const b of city.world.buildings.values()) {

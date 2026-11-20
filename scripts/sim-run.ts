@@ -15,6 +15,7 @@ import { City } from '../src/sim/City';
 import { Simulation } from '../src/sim/core/Simulation';
 import { SYSTEM_BUDGETS_MS, type SystemTiming } from '../src/sim/core/timings';
 import { buildDemoCity } from '../src/sim/demo';
+import { emptyGoals } from '../src/sim/goals/state';
 import { SAMPLE_COLUMNS, sampleCity, type CitySample } from '../src/sim/history';
 import { isStage, Stage, STAGES } from '../src/sim/stages';
 import { generateTerrain } from '../src/sim/terrain/generate';
@@ -53,6 +54,9 @@ const days = Math.round(Number(args.years) * 12 * BALANCE.daysPerMonth);
 const t0 = performance.now();
 const city = new City(generateTerrain(presetSettings(preset, seed, size)), scenario === 'demo' ? 1e9 : BALANCE.startingFunds);
 if (scenario === 'demo') buildDemoCity(city, seed);
+// Track goals as a player city does, so the bench measures their cost (they never claim, so the
+// run itself is unchanged).
+city.goals = emptyGoals(true);
 const sim = new Simulation(city);
 sim.worldChanged({ roads: true });
 const buildMs = performance.now() - t0;
