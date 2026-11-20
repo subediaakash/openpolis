@@ -8,6 +8,8 @@ export interface FxTextures {
   puff: Texture;
   chip: Texture;
   leaf: Texture;
+  /** A tongue of flame (burning buildings, render/fx/Fires.ts). */
+  flame: Texture;
 }
 
 /** Hard cap so a huge clear can't flood the GPU. */

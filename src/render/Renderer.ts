@@ -23,6 +23,8 @@ import { ToolPreview } from './overlays/ToolPreview';
 import { Effects } from './fx/Effects';
 import { Rotors } from './fx/Rotors';
 import { Smoke } from './fx/Smoke';
+import { Fires, type FireSite } from './fx/Fires';
+import type { IncidentMark } from './overlays/Indicators';
 import { AgentRenderer } from './agents/AgentRenderer';
 import { Indicators } from './overlays/Indicators';
 import { Ambient } from './ambient/Ambient';
@@ -90,6 +92,8 @@ export class Renderer {
   effects!: Effects;
   /** Animated plumes from smokestacks and cooling towers. */
   smoke!: Smoke;
+  /** Burning buildings (E3). */
+  fires!: Fires;
   /** Spinning wind-turbine blades. */
   rotors!: Rotors;
   /** Blade speed in radians per real second (set by the game from wind and game speed). */
@@ -108,6 +112,7 @@ export class Renderer {
   private stopSource: () => readonly BusStop[] = () => [];
   private lightSource: () => readonly TrafficLight[] = () => [];
   private trainSource: () => readonly RailCarPose[] = () => [];
+  private emergencySource: () => readonly Agent[] = () => [];
   private needsSource: () => ReadonlyMap<number, BuildingNeeds> = () => new Map();
   bubbles!: Bubbles;
   /** Traffic overlay: road tiles tinted by congestion (null = off). */
@@ -179,11 +184,23 @@ export class Renderer {
     stops: () => readonly BusStop[],
     lights: () => readonly TrafficLight[],
     trains: () => readonly RailCarPose[] = () => [],
+    emergency: () => readonly Agent[] = () => [],
   ) {
     this.agentSource = source;
     this.stopSource = stops;
     this.lightSource = lights;
     this.trainSource = trains;
+    this.emergencySource = emergency;
+  }
+
+  /**
+   * Incidents on the map (E3): a badge over each building with one (complaint bubbles step
+   * aside for it), and flames and smoke over burning ones until the next call.
+   */
+  setIncidents(marks: ReadonlyMap<number, IncidentMark>, fires: readonly FireSite[]) {
+    this.indicators.setIncidents(marks, this.world);
+    this.bubbles.mute(new Set(marks.keys()));
+    this.fires.setSites(fires);
   }
 
   /** Where the complaint bubbles read each building's needs from. */
@@ -242,10 +259,14 @@ export class Renderer {
     const tex = this.textures;
     this.effects = new Effects(tex.fx, this.viewRef);
     this.smoke = new Smoke(tex.fx.puff, this.viewRef);
+    this.fires = new Fires(tex.fx.flame, tex.fx.puff, this.viewRef);
     this.rotors = new Rotors(this.viewRef);
     this.ambient = new Ambient(tex.ambient, this.viewRef);
     this.agents = new AgentRenderer(tex, this.viewRef);
-    this.indicators = new Indicators({ road: tex.warnRoad, power: tex.warnPower, water: tex.warnWater, coin: tex.taxCoin }, this.viewRef);
+    this.indicators = new Indicators(
+      { road: tex.warnRoad, power: tex.warnPower, water: tex.warnWater, coin: tex.taxCoin, fire: tex.incidentFire, theft: tex.incidentTheft, patient: tex.incidentPatient },
+      this.viewRef,
+    );
     this.hover = new HoverHighlight(tex.hover, this.viewRef);
     const t0 = performance.now();
     this.ext = generateBorderlands(this.world, this.ring);
@@ -266,6 +287,8 @@ export class Renderer {
       this.ambient.lower,
       this.rotors.container,
       this.smoke.container,
+      this.fires.container,
+      this.agents.beacons,
       this.effects.container,
       this.ambient.upper,
       this.overlay,
@@ -448,12 +471,13 @@ export class Renderer {
     this.ground.animate(dt, cam.zoom);
     this.border.cull(viewRect);
     this.border.update(dt);
-    this.agents.update(this.world, this.agentSource(), this.stopSource(), this.lightSource(), viewRect, cam.zoom, this.trainSource());
+    this.agents.update(this.world, this.agentSource(), this.stopSource(), this.lightSource(), viewRect, cam.zoom, this.trainSource(), this.emergencySource());
     this.ground.update(dt);
     this.hover.update(dt);
     this.toolPreview.update(dt);
     this.effects.update(dt);
     this.smoke.update(dt, viewRect, cam.zoom);
+    this.fires.update(dt, viewRect, cam.zoom);
     this.rotors.update(dt, viewRect, this.rotorSpin());
     this.ambient.update(dt, viewRect, cam.zoom, this.daylightColor);
     this.indicators.update(dt);

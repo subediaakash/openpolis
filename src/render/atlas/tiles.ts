@@ -26,14 +26,14 @@ import {
   PERSON_W,
   VEHICLE_FRAME_H,
   VEHICLE_KINDS,
-  VEHICLE_VARIANTS,
+  VEHICLE_VARIANT_COUNT,
+  type VehicleKind,
   paintRailCar,
   RAIL_CAR_PARTS,
   type RailCarPart,
 } from './agentArt';
-import type { AgentKind } from '../../sim/systems/traffic';
 import { BUILDING_IDS, type BuildingId } from '../../sim/buildings/catalog';
-import { CHIP_SIZE, LEAF_SIZE, paintChip, paintLeaf, paintPuff, PUFF_SIZE } from './fxArt';
+import { CHIP_SIZE, FLAME_H, FLAME_W, LEAF_SIZE, paintChip, paintFlame, paintLeaf, paintPuff, PUFF_SIZE } from './fxArt';
 import type { FxTextures } from '../fx/Effects';
 import { BEACON_SIZE, BIRD_H, BIRD_W, CLOUD_H, CLOUD_W, DROP_SIZE, GLOW_H, GLOW_W, paintBeacon, paintBird, paintCloudShadow, paintDroplet, paintWindowGlow } from './ambient';
 import {
@@ -113,7 +113,8 @@ export interface TerrainTextures {
   /** Animated details (render/ambient): window glows per wall face, beacons, spray, birds, cloud shadows. */
   ambient: AmbientTextures;
   /** Vehicles, indexed by kind, then variant, then direction (0 NE, 1 SE, 2 SW, 3 NW). */
-  vehicles: Readonly<Record<Exclude<AgentKind, 'person'>, Texture[][]>>;
+  /** By kind, then paint variant (VEHICLE_VARIANT_COUNT), then direction. */
+  vehicles: Readonly<Record<VehicleKind, Texture[][]>>;
   /** Trains: locomotive and carriage, by direction (render/atlas/agentArt.ts paintRailCar). */
   trains: Readonly<Record<RailCarPart, Texture[]>>;
   /** Pedestrians, indexed by variant then walk frame (0/1). */
@@ -125,6 +126,10 @@ export interface TerrainTextures {
   warnPower: Texture;
   /** Taxes waiting at the Town Hall: a gold coin. */
   taxCoin: Texture;
+  /** Incidents (docs/specs/evolution.md, E3): a fire, a theft, a patient waiting. */
+  incidentFire: Texture;
+  incidentTheft: Texture;
+  incidentPatient: Texture;
   warnWater: Texture;
   /** Traffic-light pole (lamp tinted red/green). */
   lamp: Texture;
@@ -296,6 +301,40 @@ function paintTaxCoin(ctx: CanvasRenderingContext2D) {
   ctx.fillText('$', 9, 8.4);
 }
 
+/** A fire: a flame on red. */
+function paintIncidentFire(ctx: CanvasRenderingContext2D) {
+  paintPin(ctx, '#5a0d0a', '#e23b2e');
+  ctx.fillStyle = '#ffd166';
+  ctx.beginPath();
+  ctx.moveTo(9, 2.6);
+  ctx.bezierCurveTo(10.2, 5, 13, 6.6, 12.4, 9.6);
+  ctx.arc(9, 9.8, 3.4, 0, Math.PI);
+  ctx.bezierCurveTo(5, 7.4, 7.4, 6.8, 9, 2.6);
+  ctx.fill();
+  ctx.fillStyle = '#fff3d6';
+  ctx.beginPath();
+  ctx.arc(9, 10.6, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** A theft: an open-handed "!" on police blue. */
+function paintIncidentTheft(ctx: CanvasRenderingContext2D) {
+  paintPin(ctx, '#0f1f3d', '#2f5fd0');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(8, 3.4, 2, 6.2);
+  ctx.beginPath();
+  ctx.arc(9, 12, 1.2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** A patient waiting for an ambulance: a red cross on white. */
+function paintIncidentPatient(ctx: CanvasRenderingContext2D) {
+  paintPin(ctx, '#7a1414', '#f8f8f4');
+  ctx.fillStyle = '#e02b2b';
+  ctx.fillRect(7.6, 4, 2.8, 8);
+  ctx.fillRect(5, 6.6, 8, 2.8);
+}
+
 /** "No water": a drop. */
 function paintWarnWater(ctx: CanvasRenderingContext2D) {
   paintPin(ctx, '#123a5a', '#3a9bf0');
@@ -417,7 +456,7 @@ export function buildTerrainTextures(): TerrainTextures {
     }
   }
   for (const k of VEHICLE_KINDS) {
-    for (let v = 0; v < VEHICLE_VARIANTS; v++) {
+    for (let v = 0; v < VEHICLE_VARIANT_COUNT[k]; v++) {
       for (let d = 0; d < 4; d++) b.add(`veh_${k}_${v}_${d}`, W, VEHICLE_FRAME_H, (ctx) => paintVehicle(ctx, k, v, d));
     }
   }
@@ -430,9 +469,13 @@ export function buildTerrainTextures(): TerrainTextures {
   b.add('warn_power', 18, 20, paintWarnPower);
   b.add('warn_water', 18, 20, paintWarnWater);
   b.add('tax_coin', 18, 20, paintTaxCoin);
+  b.add('incident_fire', 18, 20, paintIncidentFire);
+  b.add('incident_theft', 18, 20, paintIncidentTheft);
+  b.add('incident_patient', 18, 20, paintIncidentPatient);
   b.add('lamp', 7, 16, paintLamp);
   for (const k of BUBBLE_KINDS) b.add(`bubble_${k}`, BUBBLE_W, BUBBLE_H, (ctx) => paintBubble(ctx, k));
   b.add('fx_puff', PUFF_SIZE, PUFF_SIZE, paintPuff);
+  b.add('fx_flame', FLAME_W, FLAME_H, paintFlame);
   b.add('fx_chip', CHIP_SIZE, CHIP_SIZE, paintChip);
   b.add('fx_leaf', LEAF_SIZE, LEAF_SIZE, paintLeaf);
   b.add('amb_glow_sw', GLOW_W, GLOW_H, (ctx) => paintWindowGlow(ctx, 'sw'));
@@ -451,6 +494,8 @@ export function buildTerrainTextures(): TerrainTextures {
     if (!t) throw new Error(`atlas frame missing: ${name}`);
     return t;
   };
+  /** One vehicle kind's frames: by paint variant, then by direction. */
+  const vehicleFrames = (k: VehicleKind): Texture[][] => range(VEHICLE_VARIANT_COUNT[k], (v) => range(4, (d) => get(`veh_${k}_${v}_${d}`)));
   const masks = (prefix: string): MaskTextures =>
     range(WOBBLE_VARIANTS, (w) => range(16, (m) => (m === 0 || m === 15 ? Texture.EMPTY : get(`${prefix}_${w}_${m}`))));
 
@@ -496,9 +541,15 @@ export function buildTerrainTextures(): TerrainTextures {
         range(buildingVariantCount(id), (v) => BUILDING_ROTATIONS.map((r) => get(`bld_${id}_${v}_${r}`))),
       ]),
     ) as Record<BuildingId, Texture[][]>,
-    vehicles: Object.fromEntries(
-      VEHICLE_KINDS.map((k) => [k, range(VEHICLE_VARIANTS, (v) => range(4, (d) => get(`veh_${k}_${v}_${d}`)))]),
-    ) as Record<Exclude<AgentKind, 'person'>, Texture[][]>,
+    vehicles: {
+      car: vehicleFrames('car'),
+      taxi: vehicleFrames('taxi'),
+      bus: vehicleFrames('bus'),
+      truck: vehicleFrames('truck'),
+      fire_truck: vehicleFrames('fire_truck'),
+      police_car: vehicleFrames('police_car'),
+      ambulance: vehicleFrames('ambulance'),
+    },
     people: range(PERSON_VARIANTS, (v) => range(2, (f) => get(`person_${v}_${f}`))),
     trains: { engine: range(4, (d) => get(`train_engine_${d}`)), carriage: range(4, (d) => get(`train_carriage_${d}`)) },
     busStops: range(4, (side) => get(`stop_${side}`)),
@@ -516,10 +567,13 @@ export function buildTerrainTextures(): TerrainTextures {
     },
     warnPower: get('warn_power'),
     taxCoin: get('tax_coin'),
+    incidentFire: get('incident_fire'),
+    incidentTheft: get('incident_theft'),
+    incidentPatient: get('incident_patient'),
     warnWater: get('warn_water'),
     lamp: get('lamp'),
     bubbles: Object.fromEntries(BUBBLE_KINDS.map((k) => [k, get(`bubble_${k}`)])) as Record<ComplaintKind, Texture>,
-    fx: { puff: get('fx_puff'), chip: get('fx_chip'), leaf: get('fx_leaf') },
+    fx: { puff: get('fx_puff'), chip: get('fx_chip'), leaf: get('fx_leaf'), flame: get('fx_flame') },
     ambient: {
       glow: { sw: get('amb_glow_sw'), se: get('amb_glow_se') },
       beacon: get('amb_beacon'),

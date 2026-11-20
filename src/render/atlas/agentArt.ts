@@ -12,8 +12,22 @@ export const VEHICLE_ANCHOR_Y = (VEHICLE_HEADROOM + GROUND_PAD + HALF_H) / VEHIC
 export const PERSON_W = 8;
 export const PERSON_H = 14;
 
-export const VEHICLE_KINDS: readonly Exclude<AgentKind, 'person'>[] = ['car', 'taxi', 'bus', 'truck'];
-export const VEHICLE_VARIANTS = 6;
+export type VehicleKind = Exclude<AgentKind, 'person'>;
+
+/**
+ * Paint variants per vehicle kind: traffic comes in six liveries; emergency vehicles (E3) have
+ * one each. A `Record` over every kind, so a new agent kind can't be left out of the atlas.
+ */
+export const VEHICLE_VARIANT_COUNT: Readonly<Record<VehicleKind, number>> = {
+  car: 6,
+  taxi: 6,
+  bus: 6,
+  truck: 6,
+  fire_truck: 1,
+  police_car: 1,
+  ambulance: 1,
+};
+export const VEHICLE_KINDS: readonly VehicleKind[] = ['car', 'taxi', 'bus', 'truck', 'fire_truck', 'police_car', 'ambulance'];
 export const PERSON_VARIANTS = 8;
 
 const CAR_COLORS = ['#d93b3b', '#2f6fd6', '#f2f2ee', '#3a3f48', '#2f9e5a', '#f08c2e'] as const;

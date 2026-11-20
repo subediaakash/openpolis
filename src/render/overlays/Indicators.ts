@@ -12,15 +12,26 @@ export interface BadgeTextures {
   water: Texture;
   /** Taxes waiting at the Town Hall (docs/specs/evolution.md, E5). */
   coin: Texture;
+  /** Incidents (E3): a fire, a theft, a patient waiting for an ambulance. */
+  fire: Texture;
+  theft: Texture;
+  patient: Texture;
 }
 
-/** Floating badges above buildings that need attention: no road access, taxes to collect, no power, no water. */
+/** What's happening at a building, for its badge (most urgent wins: fire, patient, theft). */
+export type IncidentMark = 'fire' | 'patient' | 'theft';
+
+/**
+ * Floating badges above buildings that need attention: an incident first (it's urgent), then no
+ * road access, taxes to collect, no power, no water.
+ */
 export class Indicators {
   readonly container = new Container();
   private readonly pool: Sprite[] = [];
   private t = 0;
   private bases: number[] = [];
   private taxesWaiting = false;
+  private incidents: ReadonlyMap<number, IncidentMark> = new Map();
 
   constructor(
     private readonly badges: BadgeTextures,
@@ -29,6 +40,8 @@ export class Indicators {
 
   /** Which badge a building needs, if any (one at a time, most basic problem first). */
   private badgeFor(b: BuildingInstance): Texture | null {
+    const incident = this.incidents.get(b.id);
+    if (incident) return this.badges[incident];
     if (b.entrance === -1) return this.badges.road;
     if (this.taxesWaiting && b.def === 'town_hall' && b.construction === 0) return this.badges.coin;
     if (b.construction > 0 || !needsUtilities(BUILDINGS[b.def])) return null;
@@ -41,6 +54,13 @@ export class Indicators {
   setTaxesWaiting(on: boolean, world: World) {
     if (on === this.taxesWaiting) return;
     this.taxesWaiting = on;
+    this.sync(world);
+  }
+
+  /** Incidents by building id; redraws only when the marks changed. */
+  setIncidents(marks: ReadonlyMap<number, IncidentMark>, world: World) {
+    if (sameMarks(marks, this.incidents)) return;
+    this.incidents = marks;
     this.sync(world);
   }
 
@@ -78,4 +98,10 @@ export class Indicators {
       this.pool[k].y = y + Math.sin(this.t * 4 + k) * 2;
     });
   }
+}
+
+function sameMarks(a: ReadonlyMap<number, IncidentMark>, b: ReadonlyMap<number, IncidentMark>): boolean {
+  if (a.size !== b.size) return false;
+  for (const [id, mark] of a) if (b.get(id) !== mark) return false;
+  return true;
 }

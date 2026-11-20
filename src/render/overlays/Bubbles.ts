@@ -29,11 +29,17 @@ export class Bubbles {
   private readonly bubbles: Bubble[] = [];
   private readonly free: Sprite[] = [];
   private spawnTimer = 0;
+  /** Buildings with an emergency (a fire, a patient): their badge speaks for them, so no bubble. */
+  private muted: ReadonlySet<number> = new Set();
 
   constructor(
     private readonly textures: Readonly<Record<ComplaintKind, Texture>>,
     private readonly viewRef: ViewRef,
   ) {}
+
+  mute(buildings: ReadonlySet<number>) {
+    this.muted = buildings;
+  }
 
   update(dt: number, world: World, needs: ReadonlyMap<number, BuildingNeeds>, view: Rect, zoom: number) {
     const show = zoom >= MIN_ZOOM;
@@ -41,7 +47,7 @@ export class Bubbles {
       const b = this.bubbles[k];
       b.age += dt;
       const building = world.buildings.get(b.building);
-      if (!show || !building || b.age >= LIFETIME || needs.get(b.building)?.complaint !== b.kind) {
+      if (!show || !building || b.age >= LIFETIME || this.muted.has(b.building) || needs.get(b.building)?.complaint !== b.kind) {
         b.sprite.visible = false;
         this.free.push(b.sprite);
         this.bubbles.splice(k, 1);
@@ -57,7 +63,7 @@ export class Bubbles {
     const shown = new Set(this.bubbles.map((b) => b.building));
     const candidates: { b: BuildingInstance; kind: ComplaintKind }[] = [];
     for (const [id, n] of needs) {
-      if (!n.complaint || shown.has(id)) continue;
+      if (!n.complaint || shown.has(id) || this.muted.has(id)) continue;
       const b = world.buildings.get(id);
       if (!b) continue;
       const p = this.anchor(b);
