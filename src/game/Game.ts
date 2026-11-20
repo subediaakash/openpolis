@@ -16,13 +16,17 @@ import { buildingDef, isPlaceable, Lifestyle, type BuildingInstance } from '../s
 import { Simulation } from '../sim/core/Simulation';
 import type { DayOutcome } from '../sim/core/System';
 import { findEntrance } from '../sim/systems/access';
-import { nextStage, STAGES, unlockedAt, unlockStage, unlockTech } from '../sim/stages';
+import { nextStage, STAGES, unlockedAt } from '../sim/stages';
+import type { GoalId } from '../sim/goals/catalog';
+import { claimGoal, emptyGoals } from '../sim/goals/state';
+import { lockOf } from '../sim/unlocks';
 import { stageRequirements } from '../sim/progression';
 import { lifestyleReport } from '../sim/systems/lifestyle';
 import { currentTech, researchRate, TECHS } from '../sim/research';
 import { materialStorage } from '../sim/systems/materials';
 import { collectTaxes, townHall } from '../sim/systems/budget';
 import { inspectInfo } from './inspect';
+import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyMessage } from './goals';
 import { aqiBand } from '../sim/systems/air';
 import { isWaterTerrain } from '../render/transitions';
 import { windFactor } from '../sim/systems/energy';
@@ -209,6 +213,8 @@ export class Game {
       // ... and build with materials their industry makes (E6), starting with a small yard.
       city.needsMaterials = !opts.demo;
       city.materials = BALANCE.materialsStarting;
+      // ... and give the player goals to aim for at each stage (docs/specs/goals.md).
+      city.goals = emptyGoals(!opts.demo);
       demo = opts.demo ? buildDemoCity(city, opts.terrain.seed) : null;
       sim = new Simulation(city);
       if (demo) sim.worldChanged({ roads: true });
@@ -474,16 +480,9 @@ export class Game {
       this.sound.play('error');
       this.notify('error', 'Rail track needs the Rapid transit research (Research Centre, Metropolis stage)');
     } else if (result.reason === 'locked' && p.kind === 'place') {
-      const stage = STAGES[unlockStage(p.plan.building)];
-      const tech = unlockTech(p.plan.building);
-      const name = buildingDef(p.plan.building).name;
+      const lock = lockOf(this.city, p.plan.building);
       this.sound.play('error');
-      this.notify(
-        'error',
-        this.city.stage >= unlockStage(p.plan.building) && tech
-          ? `${name} needs the ${TECHS.find((t) => t.id === tech)?.name ?? tech} research`
-          : `${name} unlocks at ${stage.name} (${stage.population.toLocaleString()} people)`,
-      );
+      if (lock) this.notify('error', lockInfo(lock, p.plan.building).detail);
     }
   }
 
@@ -513,6 +512,7 @@ export class Game {
     this.renderer.indicators.setTaxesWaiting(this.city.collectsTaxes && this.city.uncollected > 0, this.world);
     this.renderer.indicators.sync(this.world);
     this.hintUtilities();
+    this.announceGoals();
     if (this.inspected !== null && !this.world.buildings.has(this.inspected)) this.inspect(null);
     this.emitInspect();
     this.emitCity();
@@ -547,6 +547,7 @@ export class Game {
     this.showDay(out);
     this.explainMaterials();
     this.showMilestones(out);
+    this.announceGoals();
     this.explainWaitingZones();
     // Congestion changes every day, even when no buildings did.
     if (out.changed.length === 0) this.refreshDataView();
@@ -585,7 +586,8 @@ export class Game {
       const def = STAGES[out.stage];
       const unlocked = this.city.locked ? unlockedAt(out.stage).map((id) => buildingDef(id).name) : [];
       this.sound.play('build');
-      this.notify('milestone', `Your city is now a ${def.name}!${unlocked.length ? ` New: ${unlocked.join(', ')}.` : ''} ${def.news}`.trim(), `stage-${out.stage}`);
+      const goals = this.city.goals.on ? ' New goals to try.' : '';
+      this.notify('milestone', `Your city is now a ${def.name}!${unlocked.length ? ` New: ${unlocked.join(', ')}.` : ''} ${def.news}${goals}`.trim(), `stage-${out.stage}`);
     }
     if (out.research) {
       this.sound.play('coin');
@@ -596,6 +598,30 @@ export class Game {
     } else if (out.lifestyle === Lifestyle.Prosperous) {
       this.notify('milestone', 'The first homes are Prosperous! They pay the most tax, and they want a university.', 'lifestyle-2');
     }
+  }
+
+  /** Goals that just became ready (after an edit or a day): one toast each, kept in the inbox until claimed. */
+  private announceGoals() {
+    const ready = this.sim.goals.takeReady();
+    if (ready.length === 0) return;
+    this.sound.play('build');
+    for (const id of ready) this.notify('milestone', readyMessage(id), `goal-${id}`);
+  }
+
+  /** Take a ready goal's reward (the Goals panel's Claim button). */
+  claimGoal(id: GoalId) {
+    const result = claimGoal(this.city, id);
+    if (!result.ok) {
+      this.sound.play('error');
+      this.notify('error', claimMessage(result));
+      return;
+    }
+    this.sound.play('coin');
+    this.notify('milestone', claimMessage(result));
+    this.resolve(`goal-${id}`);
+    this.events.emit('funds', this.city.funds);
+    this.emitCity();
+    this.emitBudget();
   }
 
   /**
@@ -908,6 +934,7 @@ export class Game {
       people: this.traffic.agents.length - cars,
       progress: this.progressInfo(),
       air: this.sim.air.report,
+      goals: goalsInfo(this.sim),
     });
   }
 
@@ -922,6 +949,7 @@ export class Game {
       residents: lifestyleReport(this.city).residents,
       research: this.researchInfo(),
       techs: TECHS.slice(0, this.city.research.done).map((t) => t.id),
+      locks: buildingLocks(this.city),
     };
   }
 
