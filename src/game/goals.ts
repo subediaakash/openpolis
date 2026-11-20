@@ -47,6 +47,12 @@ export function goalsInfo(sim: Simulation): GoalsInfo | null {
   return { active, ready: state.ready.size, claimed: state.claimed.size, total: GOAL_IDS.length };
 }
 
+/** What a goal pays, in a sentence ("$1,500, and Central Park unlocks early."). */
+export function rewardText(id: GoalId): string {
+  const { reward } = goalDef(id);
+  return reward.unlock ? `The reward: ${money(reward.funds)}, and the ${buildingDef(reward.unlock).name} unlocks early.` : `The reward: ${money(reward.funds)}.`;
+}
+
 /** The toast when a goal's condition is met. */
 export function readyMessage(id: GoalId): string {
   const { title, reward } = goalDef(id);

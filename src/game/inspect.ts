@@ -1,4 +1,6 @@
 import { incidentInfo, responderInfo } from './incidents';
+import { residentsOf, type Resident } from './news/people';
+import { cityStats } from '../sim/systems/population';
 import { BALANCE } from '../shared/balance';
 import { BUILDINGS, buildingDef, Lifestyle, LIFESTYLE_NAMES, SERVICE_KINDS, type BuildingDef, type BuildingInstance } from '../sim/buildings/catalog';
 import type { Simulation } from '../sim/core/Simulation';
@@ -87,7 +89,31 @@ export function inspectInfo(sim: Simulation, b: BuildingInstance): InspectInfo {
       : null,
     incident: incidentInfo(sim, b),
     responder: responderInfo(sim, b),
+    residents: d.category === 'residential' ? residentsInfo(sim, b) : [],
   };
+}
+
+/** A home's named residents (docs/specs/news.md): their lives follow the city's jobs and the home's mood. */
+function residentsInfo(sim: Simulation, b: BuildingInstance): Resident[] {
+  if (b.occupants === 0 || b.construction > 0) return [];
+  const needs = sim.needs.byBuilding.get(b.id);
+  const stats = cityStats(sim.world);
+  const workforce = stats.population * BALANCE.workforceShare;
+  const jobs = { shop: 0, office: 0, industry: 0 };
+  for (const other of sim.world.buildings.values()) {
+    const od: BuildingDef = BUILDINGS[other.def];
+    if (od.zone === 'C') jobs[od.density === 'high' ? 'office' : 'shop'] += other.occupants;
+    else if (od.zone === 'I') jobs.industry += other.occupants;
+  }
+  return residentsOf({
+    seed: sim.world.seed,
+    buildingId: b.id,
+    occupants: b.occupants,
+    happiness: needs?.happiness ?? 1,
+    complaint: needs?.complaint ? COMPLAINT_TEXT[needs.complaint] : null,
+    jobless: workforce > 0 ? Math.min(1, stats.unemployed / workforce) : 0,
+    jobs,
+  });
 }
 
 /** A home's lifestyle tier and, in plain words, what moves it next. */
