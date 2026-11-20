@@ -2,7 +2,7 @@
  * Procedural sound effects (Web Audio): no audio files, like the art.
  * The AudioContext is created on the first user gesture (browsers block audio before that).
  */
-export type SoundId = 'build' | 'bridge' | 'clear' | 'error' | 'tool' | 'tick' | 'coin';
+export type SoundId = 'build' | 'bridge' | 'clear' | 'error' | 'tool' | 'tick' | 'coin' | 'alarm';
 
 const MUTE_KEY = 'citybuilder.muted';
 const MASTER_VOLUME = 0.6;
@@ -111,6 +111,10 @@ export class SoundBoard {
       case 'clear':
         this.burst(t, 0.28, 1800, 'lowpass', 0.3, 350);
         for (let k = 0; k < 4; k++) this.burst(t + 0.03 + k * 0.045, 0.02, 2500, 'bandpass', 0.12);
+        break;
+      case 'alarm':
+        // A short two-tone siren: hi, lo, hi, quiet under the city.
+        for (let k = 0; k < 3; k++) this.tone('triangle', k % 2 === 0 ? 960 : 720, k % 2 === 0 ? 960 : 720, t + k * 0.16, 0.14, 0.05);
         break;
       case 'error':
         this.tone('square', 130, 120, t, 0.09, 0.05);

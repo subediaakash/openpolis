@@ -1,6 +1,6 @@
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import { useRef } from 'react';
-import { inboxAtom } from '../atoms';
+import { gameAtom, inboxAtom } from '../atoms';
 import { useDismiss, useOverlay } from '../overlay/overlay';
 
 /**
@@ -10,6 +10,7 @@ import { useDismiss, useOverlay } from '../overlay/overlay';
  */
 export function AlertsButton() {
   const [alerts, setAlerts] = useAtom(inboxAtom);
+  const game = useAtomValue(gameAtom);
   const { open, toggle: toggleMenu, close } = useOverlay('alerts');
   const wrap = useRef<HTMLSpanElement>(null);
   useDismiss(wrap, open, close);
@@ -59,6 +60,18 @@ export function AlertsButton() {
                     <span className="alert-text">{a.message}</span>
                     <span className="alert-date">{a.date}</span>
                   </span>
+                  {a.focus !== undefined && (
+                    <button
+                      type="button"
+                      className="alert-show"
+                      onClick={() => {
+                        if (a.focus !== undefined) game?.focusBuilding(a.focus);
+                        close();
+                      }}
+                    >
+                      Show
+                    </button>
+                  )}
                   <button type="button" className="alert-dismiss" aria-label="Dismiss" onClick={() => dismiss(a.key)}>
                     <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true">
                       <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />

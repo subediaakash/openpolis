@@ -28,6 +28,8 @@ export interface InboxAlert {
   /** Notice id of the latest version (newest first). */
   id: number;
   read: boolean;
+  /** A building the alert is about: "Show" takes the camera there. */
+  focus?: number;
 }
 /** The alerts inbox (top bar bell), newest first; at most INBOX_MAX. */
 export const inboxAtom = atom<readonly InboxAlert[]>([]);

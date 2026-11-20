@@ -68,6 +68,8 @@ function alertFor(info: InspectInfo): { tone: 'ok' | 'warn' | 'building'; title:
   if (info.constructionDays > 0) {
     return { tone: 'building', title: `Under construction · ${info.constructionDays} day${info.constructionDays === 1 ? '' : 's'} left` };
   }
+  // An emergency outranks everything else about the building.
+  if (info.incident) return { tone: 'warn', title: info.incident.title, body: info.incident.status };
   if (info.abandoned) return { tone: 'warn', title: 'Abandoned', body: 'Its people left after a long unhappy spell. Fix the needs below and they come back.' };
   if (!info.hasRoad) return { tone: 'warn', title: 'No road access', body: 'Build a road within 3 tiles of it.' };
   if (info.powerIssue) {
@@ -267,6 +269,22 @@ export function InfoPanel() {
         </section>
       )}
 
+      {info.responder && (
+        <section className="info-section">
+          <h3 className="info-section-title">Emergency calls</h3>
+          <div className="info-stats">
+            <Stat label={`${info.responder.vehicles} out`} value={`${info.responder.out} of ${info.responder.fleet}`}>
+              <Meter value={info.responder.fleet === 0 ? 0 : info.responder.out / info.responder.fleet} />
+            </Stat>
+            <Stat label="This month" value={`${info.responder.inTime} in time · ${info.responder.late} late`} />
+          </div>
+          <p className="info-note">
+            {info.hasRoad
+              ? 'Vehicles take the fastest road route, slowed by traffic. A station with every vehicle out can\u2019t answer new calls.'
+              : 'Build it against a road: its vehicles leave from there.'}
+          </p>
+        </section>
+      )}
       {info.station && <StationSection station={info.station} />}
       {info.busStation && (
         <section className="info-section">

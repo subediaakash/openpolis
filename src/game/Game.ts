@@ -27,6 +27,8 @@ import { materialStorage } from '../sim/systems/materials';
 import { collectTaxes, townHall } from '../sim/systems/budget';
 import { inspectInfo } from './inspect';
 import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyMessage } from './goals';
+import { fireSites, IncidentFeed, incidentMarks } from './incidents';
+import type { IncidentEvent, IncidentKind } from '../sim/systems/incidents';
 import { aqiBand } from '../sim/systems/air';
 import { isWaterTerrain } from '../render/transitions';
 import { windFactor } from '../sim/systems/energy';
@@ -146,6 +148,10 @@ export class Game {
   private readonly waitNoticeDay = { r: -Infinity, c: -Infinity, o: -Infinity, i: -Infinity };
   /** The clock day of the last brownout notice (one per clock day). */
   private brownoutDay = -1;
+  /** Words incident events for toasts and alerts (game/incidents.ts). */
+  private readonly incidentFeed = new IncidentFeed();
+  /** Incidents were on the map last tick (so the frame after the last one ends clears them). */
+  private incidentsShown = false;
   private recentRoadTool: RoadToolId = 'road';
   /** The Move tool's picked-up building (id), if any. */
   /** Day of the last "waiting for materials" notice. */
@@ -177,6 +183,7 @@ export class Game {
       () => this.traffic.stops,
       () => this.traffic.lights(),
       () => this.sim.trains.poses(),
+      () => this.sim.incidents.responders.map((r) => r.agent),
     );
     renderer.setNeedsSource(() => this.sim.needs.byBuilding);
     // Blades turn with the day's wind, faster at higher game speeds, and stop when paused.
@@ -513,6 +520,7 @@ export class Game {
     this.renderer.indicators.sync(this.world);
     this.hintUtilities();
     this.announceGoals();
+    this.drawIncidents();
     if (this.inspected !== null && !this.world.buildings.has(this.inspected)) this.inspect(null);
     this.emitInspect();
     this.emitCity();
@@ -548,6 +556,7 @@ export class Game {
     this.explainMaterials();
     this.showMilestones(out);
     this.announceGoals();
+    this.drawIncidents();
     this.explainWaitingZones();
     // Congestion changes every day, even when no buildings did.
     if (out.changed.length === 0) this.refreshDataView();
@@ -608,6 +617,36 @@ export class Game {
     for (const id of ready) this.notify('milestone', readyMessage(id), `goal-${id}`);
   }
 
+  /**
+   * Start an incident now (dev tools, docs/specs/evolution.md E3): at `buildingId`, else the
+   * building in the info panel, else an occupied home or business near the middle of the view.
+   * Returns the building's id, or null when there's nowhere it can happen.
+   */
+  startIncident(kind: IncidentKind, buildingId?: number): number | null {
+    const pick = buildingId ?? this.inspected ?? this.busyBuildingNearView();
+    const b = pick === null ? undefined : this.world.buildings.get(pick);
+    if (!b || BUILDINGS[b.def].category === 'civic') return null;
+    this.sim.incidents.start(kind, b);
+    this.showIncidents();
+    return b.id;
+  }
+
+  /** The occupied zoned building closest to the middle of the screen. */
+  private busyBuildingNearView(): number | null {
+    const centre = this.tileAt({ x: this.renderer.app.screen.width / 2, y: this.renderer.app.screen.height / 2 });
+    let best: number | null = null;
+    let bestDist = Infinity;
+    for (const b of this.world.buildings.values()) {
+      if (BUILDINGS[b.def].category === 'civic' || b.occupants === 0 || b.construction > 0) continue;
+      const d = (b.x - centre.x) ** 2 + (b.y - centre.y) ** 2;
+      if (d < bestDist) {
+        bestDist = d;
+        best = b.id;
+      }
+    }
+    return best;
+  }
+
   /** Take a ready goal's reward (the Goals panel's Claim button). */
   claimGoal(id: GoalId) {
     const result = claimGoal(this.city, id);
@@ -653,20 +692,48 @@ export class Game {
         'abandoned',
       );
     }
-    this.showBurned();
     this.afterSimChange();
   }
 
+  /** Ticks between info-panel refreshes while an inspected building has an incident (its status moves). */
+  private static readonly INCIDENT_PANEL_TICKS = 10;
+
   /**
-   * Buildings fires took since the last day (the incident system burns them on its tick):
-   * dust where they stood and one toast. Other incident events are not shown yet.
+   * Incidents on the tick (docs/specs/evolution.md, E3): toasts and alerts for what happened,
+   * badges and fires on the map, and a burned building cleared from the screen at once.
    */
-  private showBurned() {
-    const burned = this.sim.incidents.takeEvents().flatMap((e) => (e.type === 'burned' ? [e.building] : []));
-    if (burned.length === 0) return;
+  private showIncidents() {
+    const events = this.sim.incidents.takeEvents();
+    const active = this.sim.incidents.active.length > 0;
+    if (events.length === 0 && !active && !this.incidentsShown) return;
+    this.incidentsShown = active;
+    if (events.length > 0) this.announceIncidents(events);
+    this.drawIncidents();
+    if (events.length > 0 || (this.inspected !== null && this.simTick % Game.INCIDENT_PANEL_TICKS === 0)) this.emitInspect();
+  }
+
+  /** Badges and fires from the incidents now (also daily and after edits: "robbed" marks wear off by the day). */
+  private drawIncidents() {
+    this.renderer.setIncidents(incidentMarks(this.sim), fireSites(this.sim));
+  }
+
+  private announceIncidents(events: readonly IncidentEvent[]) {
+    const { notices, resolved } = this.incidentFeed.read(events, Math.floor(this.city.day / BALANCE.daysPerMonth));
+    for (const key of resolved) this.resolve(key);
+    for (const n of notices) {
+      if (n.sound) this.sound.play(n.sound);
+      this.notify(n.kind, n.message, n.key, n.focus);
+    }
+    const burned = events.flatMap((e) => (e.type === 'burned' ? [e.building] : []));
+    if (burned.length > 0) this.showBurned(burned);
+  }
+
+  /** Buildings a fire took: cleared from the map now, with dust and one toast. */
+  private showBurned(burned: readonly BuildingInstance[]) {
     const fx = this.renderer.effects;
     for (const b of burned) {
       const { w, h } = BUILDINGS[b.def].size;
+      this.renderer.refreshWorld({ x: b.x, y: b.y, w, h });
       for (let y = b.y; y < b.y + h; y++) for (let x = b.x; x < b.x + w; x++) fx.burst(x, y, 'dust', 10, Math.random() * 0.4);
     }
     this.sound.play('clear');
@@ -676,6 +743,7 @@ export class Game {
       burned.length === 1 ? `A fire destroyed a ${name}. Build a Fire Station nearby.` : `${burned.length} buildings burned down. Build Fire Stations to cover the city.`,
       'fire',
     );
+    this.afterSimChange();
   }
 
   /** The "pop" a building makes when it appears. */
@@ -1210,10 +1278,10 @@ export class Game {
   }
 
   /** A toast; with a `key` it is also kept in the alerts inbox until resolved or dismissed. */
-  private notify(kind: Notice['kind'], message: string, key?: string) {
+  private notify(kind: Notice['kind'], message: string, key?: string, focus?: number) {
     const { year, month, dayOfMonth } = this.city.date;
     const date = `${MONTH_NAMES[month]} ${dayOfMonth}, Y${year}`;
-    this.events.emit('notice', { id: ++noticeSeq, kind, message, ...(key && { key, date }) });
+    this.events.emit('notice', { id: ++noticeSeq, kind, message, ...(key && { key, date }), ...(focus !== undefined && { focus }) });
   }
 
   /** An ongoing problem is gone: clear its alert. */
@@ -1228,6 +1296,7 @@ export class Game {
     this.simTick++;
     const hour = Math.floor(this.city.hour);
     const out = this.sim.tick();
+    this.showIncidents();
     if (Math.floor(this.city.hour) !== hour) this.newHour();
     if (out) this.newDay(out);
   }

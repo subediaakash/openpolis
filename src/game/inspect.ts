@@ -1,3 +1,4 @@
+import { incidentInfo, responderInfo } from './incidents';
 import { BALANCE } from '../shared/balance';
 import { BUILDINGS, buildingDef, Lifestyle, LIFESTYLE_NAMES, SERVICE_KINDS, type BuildingDef, type BuildingInstance } from '../sim/buildings/catalog';
 import type { Simulation } from '../sim/core/Simulation';
@@ -84,6 +85,8 @@ export function inspectInfo(sim: Simulation, b: BuildingInstance): InspectInfo {
           })),
         }
       : null,
+    incident: incidentInfo(sim, b),
+    responder: responderInfo(sim, b),
   };
 }
 

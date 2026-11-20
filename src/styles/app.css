@@ -413,6 +413,19 @@ kbd {
   border-color: rgba(248, 113, 113, 0.5);
   color: #fecaca;
 }
+/* A toast about a place: tapping it goes there. */
+.notice.has-focus {
+  cursor: pointer;
+}
+.notice-show {
+  margin-left: 8px;
+  color: var(--accent);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.notice.has-focus:hover .notice-show {
+  text-decoration: underline;
+}
 
 .icon-button {
   display: grid;
@@ -4784,7 +4797,7 @@ summary {
 }
 .alert-item {
   display: grid;
-  grid-template-columns: 8px 1fr auto;
+  grid-template-columns: 8px 1fr auto auto;
   align-items: start;
   gap: 8px;
   padding: 8px 8px 8px 10px;
@@ -4828,6 +4841,21 @@ summary {
 .alert-dismiss:hover {
   background: var(--bg-panel-hover);
   color: var(--text);
+}
+/* Alerts about a place (a fire, a robbery): take the camera there. */
+.alert-show {
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border-panel);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--accent);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.alert-show:hover {
+  background: var(--bg-panel-hover);
 }
 @media (max-height: 520px) {
   .alerts-menu {

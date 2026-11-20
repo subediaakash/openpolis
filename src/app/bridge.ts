@@ -74,7 +74,7 @@ export function connectGameToStore(game: Game, store: Store): () => void {
       // Alerts with a key stay in the inbox: a newer one with the same key replaces the older.
       const key = n.key;
       if (key) {
-        const alert: InboxAlert = { key, kind: n.kind, message: n.message, date: n.date ?? '', id: n.id, read: false };
+        const alert: InboxAlert = { key, kind: n.kind, message: n.message, date: n.date ?? '', id: n.id, read: false, ...(n.focus !== undefined && { focus: n.focus }) };
         store.set(inboxAtom, (list) => [alert, ...list.filter((a) => a.key !== key)].slice(0, INBOX_MAX));
       }
       store.set(noticesAtom, (list) => [...list.slice(-2), n]);

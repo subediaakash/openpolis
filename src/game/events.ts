@@ -12,6 +12,7 @@ import type { Stage } from '../sim/stages';
 import type { AirReport } from '../sim/systems/air';
 import type { TechId } from '../sim/research';
 import type { GoalId } from '../sim/goals/catalog';
+import type { IncidentKind } from '../sim/systems/incidents';
 import type { MaterialsReport } from '../sim/systems/materials';
 import type { ToolId } from './tools';
 
@@ -203,6 +204,28 @@ export interface InspectInfo {
   station: StationInfo | null;
   /** Bus stations: riders a day, and buses out of its fleet. */
   busStation: { riders: number; out: number; fleet: number; reach: number } | null;
+  /** A fire, theft or patient here now, or a recent robbery or untreated patient (E3). */
+  incident: IncidentInfo | null;
+  /** Fire, police and health stations: vehicles out and this month's calls. */
+  responder: ResponderInfo | null;
+}
+
+export interface IncidentInfo {
+  readonly kind: IncidentKind;
+  /** "On fire!", "Being robbed". */
+  readonly title: string;
+  /** Who's coming, or why nobody is, and how long is left. */
+  readonly status: string;
+}
+
+export interface ResponderInfo {
+  /** "Fire trucks", "Ambulances". */
+  readonly vehicles: string;
+  readonly out: number;
+  readonly fleet: number;
+  /** This month's calls: reached in time, and too late. */
+  readonly inTime: number;
+  readonly late: number;
 }
 
 export interface StationInfo {
@@ -244,6 +267,8 @@ export interface Notice {
   key?: string;
   /** The game date it happened, for the inbox ("Jul 9, Y3"). */
   date?: string;
+  /** A building to show when the toast or alert is clicked (a fire, say). */
+  focus?: number;
 }
 
 export interface DebugStats {

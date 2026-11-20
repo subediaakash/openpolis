@@ -6,6 +6,7 @@ import { CitySaver } from '../../save/CitySaver';
 import type { CityRef } from '../../save/SaveStore';
 import { authAtom, saveStatusAtom } from '../atoms';
 import { connectGameToStore } from '../bridge';
+import { installDevTools } from '../devtools';
 import { randomSeed } from '../options';
 import { BuildingPicker } from '../hud/BuildingPicker';
 import { RoadPicker } from '../hud/RoadPicker';
@@ -108,6 +109,7 @@ export function GameScreen({ options, cityRef, onSaved, onReroll, onNewCity }: G
     const host = hostRef.current!;
     let game: Game | null = null;
     let disconnect: (() => void) | null = null;
+    let removeDevTools: (() => void) | null = null;
     let cancelled = false;
     let stage: ScreenStage = 'world';
 
@@ -127,6 +129,7 @@ export function GameScreen({ options, cityRef, onSaved, onReroll, onNewCity }: G
         }
         game = g;
         disconnect = connectGameToStore(g, store);
+        removeDevTools = installDevTools(g);
         // The demo is a showcase, never saved.
         if (!options.demo) {
           saverRef.current = new CitySaver(g, {
@@ -154,6 +157,7 @@ export function GameScreen({ options, cityRef, onSaved, onReroll, onNewCity }: G
       saver?.dispose();
       store.set(saveStatusAtom, null);
       disconnect?.();
+      removeDevTools?.();
       game?.destroy();
     };
   }, [store, options, attempt]);
