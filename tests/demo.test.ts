@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BUILDINGS } from '../src/sim/buildings/catalog';
 import { City } from '../src/sim/City';
 import { buildDemoCity } from '../src/sim/demo';
+import { Simulation } from '../src/sim/core/Simulation';
 import { cityStats } from '../src/sim/systems/population';
 import { generateTerrain } from '../src/sim/terrain/generate';
 import { presetSettings } from '../src/sim/terrain/presets';
@@ -34,6 +35,19 @@ describe('demo city', () => {
   it('stands its showpiece landmarks round downtown', () => {
     const { world } = demo(42);
     const ids = new Set([...world.buildings.values()].map((b) => b.def));
-    for (const id of ['sky_tower', 'sail_hotel', 'theme_park', 'observation_wheel'] as const) expect(ids.has(id)).toBe(true);
+    for (const id of ['sky_tower', 'sail_hotel', 'theme_park', 'observation_wheel', 'riverside_market'] as const) expect(ids.has(id)).toBe(true);
   });
+  it('is a planned, happy city: every need met, gas power, no coal (D-106)', () => {
+    const { city, world } = demo(42);
+    const defs = [...world.buildings.values()].map((b) => b.def);
+    expect(defs).not.toContain('power_plant');
+    expect(defs).toContain('gas_plant');
+    const sim = new Simulation(city);
+    sim.worldChanged({ roads: true });
+    const report = sim.needs.report;
+    expect(report.happiness).toBeGreaterThan(0.93);
+    // Only commuting (jobs are in town, homes on the outskirts) may cost more than a point.
+    for (const d of report.drags) if (d.kind !== 'commute') expect(d.loss).toBeLessThan(0.01);
+    expect(sim.air.report.cityAqi).toBeLessThan(50);
+  }, 20_000);
 });

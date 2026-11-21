@@ -2,6 +2,13 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: /demo as a planned waterfront city (D-106)
+- `src/sim/demo.ts` rewritten round a fixed district plan: density by distance to the river, civic green square, waterfront landmarks, park quarters and house-park lattice, green lanes, avenues instead of highways, services and local centres on patterns, bus stations wherever none reach, gas power in the industrial corner, roads planned as whole runs (bridges).
+- `scripts/demo-report.ts`: builds a demo and prints population, happiness, drags, complaints and AQI.
+- Seed 42, before → after: 22.0k → ~21–23k people, 87% → 96% happy, AQI 61 → 40; drags left: commute −3%. Seeds 7 and 1234: 96%. Everyone powered and watered on all three.
+- Checked in Chrome (Playwright) at close, mid and wide zoom: towers along the banks, wheel and Sail Hotel on the water, town hall in a three-block green; no page errors. New test: no coal, happiness > 93%, every need but commute under a point, AQI < 50. 367 tests pass; typecheck and lint clean.
+- **Next:** commute (outskirts to jobs) is the last drag; a redevelopment pass could raise downtown towers further.
+
 ## 2026-11-21: Happiness breakdown and calmer toasts (D-105)
 - **Sim:** `BuildingNeeds.losses` and `NeedsReport.drags` (`sim/systems/needs.ts`); 3 tests: losses add up per building, drags add up to the missing city happiness with the right homes, none without residents.
 - **HUD:** "Holding happiness back" in Citizens say (`CitizensPanel.tsx`), need words shared in `hud/needWords.ts`; Happiness map button.
