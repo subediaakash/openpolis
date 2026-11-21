@@ -2,6 +2,13 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Engagement H1: city goals (D-100)
+- **Sim:** `sim/goals/` (`catalog.ts` 20 goals as data, `measure.ts` readings + one `measure` switch, `state.ts` ready/claimed/streaks + claim + save helpers, `system.ts` `GoalSystem` after edits and each day, `takeReady()` for toasts). `sim/unlocks.ts` (`lockOf`) replaces `stages.isUnlocked`. Goals saved in `city.goals`; old saves backfill quietly.
+- **Game:** `game/goals.ts` words goals and locks for the HUD; `Game.claimGoal`, goal toasts (inbox key `goal-<id>`, resolved on claim), "New goals to try." on stage-up; `ProgressInfo.locks` drives the building picker ("Village or goal").
+- **HUD:** Goals panel under Citizens say in a shared left rail (`.hud-rail`): ready goals first with a Claim button, a pulsing "N to claim" badge, the hint on the next goal only, a fold-away after claiming; side by side as pills on phones. `useRememberedOpen` shared with Citizens say.
+- **Harness:** `sim:run` tracks goals; `goals.day` and `goals.change` average about 0.5 ms on /demo (budget 1 ms).
+- Checked in headless Chrome at 1440×900 and 390×844: a new city, road + three parks → "A green start" ready → claim (+$500, Central Park unlocked in Civic). 14 new tests; typecheck and lint clean. On this machine 7 timing-bound tests (demo, save, terrain budgets) time out on `main` too; with long timeouts 346/350 pass, the 4 left being wall-clock budgets.
+
 ## 2026-11-11: UI/UX pass: phones, overlays, loading (D-097, D-098, D-099)
 - **Unblocked startup.** `HEAD` (incidents work) crashed every city on start and failed typecheck: the new Trauma Centre had no art, the three emergency vehicles had no sizes, and `Game.showDay` read the removed `DayOutcome.burned`. Added a trauma-centre recipe (hospital family), liveries and sizes for fire trucks, ambulances and police cars, and `Game.showBurned()` reading `incidents.takeEvents()` (only `burned` is shown; the other incident events are still unused).
 - **Phones and upright tablets (D-097):** slim top bar + More sheet, five-button dock with a zone row, bottom sheets for pickers/inspect/budget, opt-in minimap on phones. Landscape phones share the slim bar (it had overflowed). Rotate prompt removed; manifest orientation `any`. Opaque panels instead of backdrop blur on small/touch screens.

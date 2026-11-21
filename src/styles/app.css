@@ -1378,10 +1378,31 @@ button.funds:hover {
 .happy-stat.is-on {
   border-color: rgba(79, 209, 197, 0.45);
 }
-.citizens {
+/* ---------- Left rail: Citizens say, then Goals, stacked so neither covers the other ---------- */
+.hud-rail {
+  position: absolute;
   top: 84px;
   left: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
   width: min(300px, calc(100vw - 32px));
+  /* Clear of the controls hint in the bottom-left corner. */
+  max-height: calc(100dvh - 84px - 240px);
+  pointer-events: none;
+}
+.hud-rail > .panel {
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-width: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+.citizens {
+  width: 100%;
   padding: 8px 10px;
   animation-name: hint-in;
 }
@@ -1481,6 +1502,229 @@ button.funds:hover {
 }
 .citizens-show:hover {
   background: var(--bg-panel-hover);
+}
+
+/* ---------- Goals (docs/specs/goals.md) ---------- */
+.goals {
+  width: 100%;
+  padding: 8px 10px;
+  animation-name: hint-in;
+  transition: border-color 300ms var(--ease-out), box-shadow 300ms var(--ease-out);
+}
+.goals:not(.is-open) {
+  width: auto;
+}
+/* Something to claim: a warm edge, so a folded panel still says "look here". */
+.goals.has-ready {
+  border-color: rgba(163, 230, 53, 0.4);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(163, 230, 53, 0.12), 0 0 18px rgba(163, 230, 53, 0.12);
+}
+.goals-header {
+  display: flex;
+  width: 100%;
+  gap: 7px;
+  min-height: 28px;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.goals-flag {
+  display: inline-flex;
+  color: var(--money);
+}
+.goals-title {
+  margin-right: auto;
+}
+.goals-count {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.goals-badge {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--money);
+  color: #1a2606;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  animation: goal-badge-pulse 1.8s var(--ease-out) infinite;
+}
+@keyframes goal-badge-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(163, 230, 53, 0.45);
+  }
+  60% {
+    box-shadow: 0 0 0 6px rgba(163, 230, 53, 0);
+  }
+}
+.goals-empty {
+  margin: 6px 0 2px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.goals-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.goal {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 12px;
+  /* For the fold-away after a claim. */
+  max-height: 160px;
+  overflow: hidden;
+}
+.goal-mark {
+  display: inline-flex;
+  padding-top: 1px;
+  color: var(--accent);
+}
+.goal.is-ready .goal-mark {
+  color: var(--money);
+}
+.goal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.goal-title {
+  font-weight: 600;
+  line-height: 1.3;
+}
+.goal-detail {
+  color: var(--text-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.goal-meter {
+  height: 4px;
+  margin: 1px 0;
+}
+.goal-hint {
+  color: var(--text-dim);
+  font-size: 10.5px;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+.goal-unlock {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+  padding: 1px 7px 1px 5px;
+  border-radius: 999px;
+  background: rgba(240, 178, 62, 0.14);
+  color: var(--sign);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.goal-money {
+  padding-top: 1px;
+  color: var(--money);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.goal.is-ready {
+  align-items: center;
+  background: linear-gradient(90deg, rgba(163, 230, 53, 0.12), rgba(79, 209, 197, 0.06));
+  box-shadow: inset 0 0 0 1px rgba(163, 230, 53, 0.25);
+  animation: goal-ready-in 420ms var(--ease-out) both;
+}
+@keyframes goal-ready-in {
+  from {
+    transform: scale(0.97);
+    box-shadow: inset 0 0 0 1px rgba(163, 230, 53, 0.7);
+  }
+}
+.goal-claim {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 64px;
+  min-height: 36px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--money);
+  color: #1a2606;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.15;
+  cursor: pointer;
+  transition: transform 120ms var(--ease-out), filter 120ms var(--ease-out);
+}
+.goal-claim:hover {
+  filter: brightness(1.08);
+}
+.goal-claim:active {
+  transform: scale(0.96);
+}
+.goal-claim:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.goal-claim-amount {
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.8;
+}
+.goal-claim:disabled {
+  cursor: default;
+  background: rgba(163, 230, 53, 0.3);
+  color: var(--text);
+}
+/* A claimed row folds away (GoalsPanel LEAVE_MS). */
+.goal.is-leaving {
+  animation: goal-leave 420ms var(--ease-out) forwards;
+}
+@keyframes goal-leave {
+  0% {
+    opacity: 1;
+    transform: none;
+  }
+  45% {
+    opacity: 1;
+    transform: translateX(6px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(24px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-top: -4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .goals-badge,
+  .goal.is-ready,
+  .goal.is-leaving {
+    animation: none;
+  }
 }
 .info-needs {
   display: flex;
@@ -3227,12 +3471,15 @@ summary {
   }
 
   /* Side panels between the top bar and the bottom row, scrolling inside. */
-  .citizens {
+  .hud-rail {
     top: calc(48px + var(--safe-t));
     left: calc(8px + var(--safe-l));
+    gap: 6px;
     width: min(250px, 40vw);
     max-height: calc(100dvh - 130px - var(--safe-t) - var(--safe-b));
-    overflow-y: auto;
+  }
+  .citizens,
+  .goals {
     font-size: 12px;
   }
   .info-panel {
@@ -5358,16 +5605,22 @@ summary {
     min-height: 40px;
   }
 
-  /* Small things along the edges. */
-  .citizens {
+  /* Small things along the edges. Folded, the two side panels sit side by side as pills. */
+  .hud-rail {
     top: var(--below-bar);
     left: calc(8px + var(--safe-l));
+    flex-flow: row wrap;
+    gap: 6px;
     width: min(320px, calc(100vw - 16px - var(--safe-l) - var(--safe-r)));
+    max-height: calc(100dvh - var(--below-bar) - var(--above-dock) - 8px);
+  }
+  .citizens,
+  .goals {
     max-height: 38dvh;
-    overflow-y: auto;
     font-size: 12px;
   }
-  .citizens-header {
+  .citizens-header,
+  .goals-header {
     min-height: 32px;
   }
   .minimap {
