@@ -118,8 +118,17 @@ export function paintWindows({ iso, art, m, f, isFront, rng }: FacadeArgs) {
   for (let k = 0; k < m.floors; k++) {
     const z0 = m.z0 + k * fh;
     if (shop && k === 0 && ground) {
-      if (isFront) shopfront(iso, f, fh, m.wall, rng);
-      else glazing(iso, f, a0 + 0.08, a1 - 0.08, 2.2, fh - 2.5, rng, { glass: '#3f6280', blinds: 0 });
+      if (isFront) {
+        shopfront(iso, f, fh, m.wall, rng);
+      } else {
+        // Side street display window with stone kick-plate, mullions and warm interior ambiance.
+        wallOn(iso, f, a0 + 0.05, a1 - 0.05, 0.6, 2.2, flatTone(shade(m.wall, -0.4), f.face));
+        wallOn(iso, f, a0 + 0.07, a1 - 0.07, 2.2, fh - 2.4, glassFill(iso, f, a0, a1, 2.2, fh - 2.4, '#365874'));
+        wallOn(iso, f, a0 + 0.09, a1 - 0.09, 2.6, 4.8, 'rgba(255, 224, 170, 0.35)');
+        const mid = (a0 + a1) / 2;
+        wallOn(iso, f, mid - 0.01, mid + 0.01, 2.2, fh - 2.4, flatTone(shade(m.wall, -0.2), f.face));
+        markWindow(iso, f, a0 + 0.07, a1 - 0.07, 2.2, fh - 2.4);
+      }
       continue;
     }
     const door = isFront && k === 0 && ground;

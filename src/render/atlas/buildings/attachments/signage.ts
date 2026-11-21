@@ -1,92 +1,123 @@
 import { faceRef, flatTone, pOn, shade, wallOn, type FaceRef } from '../../core';
 import type { AttachArgs } from './kit';
 
-/** Awning over the shopfront: striped French awning, solid architectural matte canopy, or cantilevered glass/metal visor. */
+/**
+ * Storefront awnings, refined architectural fascia trims, and understated parapet plaques.
+ * Cafés and shops read through architecture, warm glowing interiors, awnings, and patio life
+ * rather than oversized floating text banners.
+ */
+
+/** Muted, realistic architectural fabric tone from a recipe's awning colour. */
+function fabricTone(hex: string): string {
+  return shade(hex, -0.08);
+}
+
+/** Realistic storefront awning: French striped fabric, tailored solid canopy, or slim cantilevered visor. */
 export function paintAwning({ p, lf }: AttachArgs) {
   if (!lf) return;
   const { iso, art, rng } = p;
-  const c = art.awning ?? '#d94a3d';
-  const z = art.floorH - 1.5;
+  const c = fabricTone(art.awning ?? '#8c3b32');
+  const z = art.floorH - 1.4;
   const len = lf.a1 - lf.a0;
+  const pad = Math.min(0.03, len * 0.04);
+  const a0 = lf.a0 + pad;
+  const a1 = lf.a1 - pad;
+  const span = a1 - a0;
   const style = Math.floor(rng() * 3);
-  wallOn(iso, lf, lf.a0, lf.a1, z - 5.8, z - 3.8, 'rgba(12, 18, 30, 0.22)');
+
+  // Soft cast shadow on the storefront glass underneath the awning.
+  wallOn(iso, lf, a0, a1, z - 5.2, z - 2.6, 'rgba(12, 18, 28, 0.24)');
 
   if (style === 1) {
-    // Sleek flat cantilevered architectural canopy with contrasting fascia trim.
-    const top = flatTone(shade(c, 0.08), lf.face);
-    iso.poly([pOn(iso, lf, lf.a0, 0, z), pOn(iso, lf, lf.a1, 0, z), pOn(iso, lf, lf.a1, 0.16, z - 1.2), pOn(iso, lf, lf.a0, 0.16, z - 1.2)], top);
-    wallOn(iso, lf, lf.a0, lf.a1, z - 2.6, z - 1.2, flatTone(shade(c, -0.22), lf.face), 0.16);
-    wallOn(iso, lf, lf.a0, lf.a1, z - 1.6, z - 1.2, 'rgba(255,255,255,0.45)', 0.16);
+    // Sleek cantilevered modern architectural visor (matte metal/timber with thin light edge).
+    const top = flatTone(shade(c, -0.05), lf.face);
+    iso.poly([pOn(iso, lf, a0, 0, z), pOn(iso, lf, a1, 0, z), pOn(iso, lf, a1, 0.14, z - 0.9), pOn(iso, lf, a0, 0.14, z - 0.9)], top);
+    wallOn(iso, lf, a0, a1, z - 2.0, z - 0.9, flatTone(shade(c, -0.28), lf.face), 0.14);
+    wallOn(iso, lf, a0, a1, z - 1.15, z - 0.9, 'rgba(255, 248, 232, 0.35)', 0.14);
     return;
   }
 
-  const stripes = style === 2 ? 1 : 8;
+  // Sloped café fabric awning (style 0: tailored classic stripes, style 2: solid rich fabric).
+  const stripes = style === 2 ? 1 : 10;
   for (let k = 0; k < stripes; k++) {
-    const a = lf.a0 + (len / stripes) * k;
-    const a2 = a + len / stripes;
-    const fill = stripes === 1 ? c : k % 2 ? '#f8f4ec' : c;
-    const g = iso.ctx.createLinearGradient(...pOn(iso, lf, a, 0, z), ...pOn(iso, lf, a, 0.16, z - 4));
-    g.addColorStop(0, shade(flatTone(fill, lf.face), -0.12));
-    g.addColorStop(1, shade(flatTone(fill, lf.face), 0.1));
-    iso.poly([pOn(iso, lf, a, 0, z), pOn(iso, lf, a2, 0, z), pOn(iso, lf, a2, 0.16, z - 4), pOn(iso, lf, a, 0.16, z - 4)], g);
+    const sa = a0 + (span / stripes) * k;
+    const sb = sa + span / stripes;
+    const fill = stripes === 1 ? c : k % 2 ? '#f3ede0' : c;
+    const g = iso.ctx.createLinearGradient(...pOn(iso, lf, sa, 0, z), ...pOn(iso, lf, sa, 0.15, z - 3.4));
+    g.addColorStop(0, shade(flatTone(fill, lf.face), -0.1));
+    g.addColorStop(1, shade(flatTone(fill, lf.face), 0.08));
+    iso.poly([pOn(iso, lf, sa, 0, z), pOn(iso, lf, sb, 0, z), pOn(iso, lf, sb, 0.15, z - 3.4), pOn(iso, lf, sa, 0.15, z - 3.4)], g);
   }
-  wallOn(iso, lf, lf.a0, lf.a1, z - 5.5, z - 4, flatTone(shade(c, -0.15), lf.face), 0.16);
+  // Crisp narrow valance skirt along the front lip.
+  wallOn(iso, lf, a0, a1, z - 4.4, z - 3.4, flatTone(shade(c, -0.18), lf.face), 0.15);
+  wallOn(iso, lf, a0, a1, z - 4.6, z - 4.4, 'rgba(255, 246, 228, 0.28)', 0.15);
 }
 
-/** Perpendicular projecting blade sign hanging off a shop or café front corner. */
+/** Small, subtle wrought-iron hanging blade plaque on a shop/café corner. */
 export function paintBladeSign({ p, lf }: AttachArgs) {
   if (!lf) return;
   const { iso, art } = p;
-  const c = art.signColor ?? art.awning ?? '#d94a3d';
-  const a = lf.a1 - 0.05;
-  const z0 = art.floorH + 0.5;
-  const z1 = z0 + 7;
-  // Bracket arms + projecting vertical sign plate.
-  iso.poly([pOn(iso, lf, a, 0, z1 - 0.5), pOn(iso, lf, a, 0.16, z1 - 0.5), pOn(iso, lf, a, 0.16, z1), pOn(iso, lf, a, 0, z1)], '#343a42');
-  iso.poly([pOn(iso, lf, a, 0.03, z0), pOn(iso, lf, a, 0.15, z0), pOn(iso, lf, a, 0.15, z1 - 0.6), pOn(iso, lf, a, 0.03, z1 - 0.6)], flatTone(c, lf.face));
-  iso.poly([pOn(iso, lf, a, 0.06, z0 + 1.4), pOn(iso, lf, a, 0.12, z0 + 1.4), pOn(iso, lf, a, 0.12, z1 - 2), pOn(iso, lf, a, 0.06, z1 - 2)], 'rgba(255,255,255,0.75)');
+  const c = flatTone(shade(art.signColor ?? art.awning ?? '#3b322c', -0.12), lf.face);
+  const a = lf.a1 - 0.04;
+  const z0 = art.floorH - 2.2;
+  const z1 = z0 + 3.6;
+  // Thin iron bracket + small framed hanging sign (no giant blob).
+  iso.poly([pOn(iso, lf, a, 0, z1), pOn(iso, lf, a, 0.1, z1), pOn(iso, lf, a, 0.1, z1 + 0.45), pOn(iso, lf, a, 0, z1 + 0.45)], '#2c3138');
+  iso.poly([pOn(iso, lf, a, 0.02, z0), pOn(iso, lf, a, 0.095, z0), pOn(iso, lf, a, 0.095, z1 - 0.2), pOn(iso, lf, a, 0.02, z1 - 0.2)], c);
+  iso.poly([pOn(iso, lf, a, 0.035, z0 + 0.8), pOn(iso, lf, a, 0.08, z0 + 0.8), pOn(iso, lf, a, 0.08, z1 - 1.0), pOn(iso, lf, a, 0.035, z1 - 1.0)], 'rgba(248, 240, 222, 0.72)');
 }
 
-/** A sign board with a lit top edge and text. */
-function board(p: AttachArgs['p'], f: FaceRef, a0: number, a1: number, z0: number, z1: number, text: string, size: number, color: string, out = 0) {
-  const { iso } = p;
-  wallOn(iso, f, a0, a1, z0 - 0.6, z1 + 0.2, 'rgba(12, 18, 30, 0.25)', out);
-  wallOn(iso, f, a0, a1, z0, z1, iso.wallGradient(f.face, f.at + out, a0, a1, z0, z1, shade(color, 0.12), shade(color, -0.12)), out);
-  wallOn(iso, f, a0, a1, z1 - 0.6, z1, 'rgba(255,255,255,0.45)', out);
-  iso.text(f.face, f.at + out, (a0 + a1) / 2, (z0 + z1) / 2, text, size, '#ffffff');
+/**
+ * Refined architectural storefront fascia trim flush above the ground-floor glazing.
+ * Replaces loud floating text banners with realistic timber/slate/brass shopfront friezes.
+ */
+export function paintShopSign({ p, lf, base }: AttachArgs) {
+  const { iso, art } = p;
+  if (!lf || base.facade !== 'shopfront') return;
+  const fascia = flatTone(shade(art.signColor ?? art.awning ?? '#3b3733', -0.18), lf.face);
+  const trim = flatTone('#e8dcc4', lf.face);
+  const a0 = lf.a0 + 0.04;
+  const a1 = lf.a1 - 0.04;
+  const z0 = art.floorH - 2.2;
+  const z1 = art.floorH - 0.2;
+  // Flush fascia board with subtle brass/cream top cornice & bottom molding.
+  wallOn(iso, lf, a0, a1, z0, z1, fascia);
+  wallOn(iso, lf, a0, a1, z1 - 0.35, z1, trim);
+  wallOn(iso, lf, a0, a1, z0, z0 + 0.28, 'rgba(0, 0, 0, 0.22)');
+  // Subtle centred gold/cream nameplate emblem (reads like real shop lettering at city scale).
+  const mid = (a0 + a1) / 2;
+  const hw = Math.min(0.14, (a1 - a0) * 0.24);
+  wallOn(iso, lf, mid - hw, mid + hw, z0 + 0.65, z1 - 0.65, 'rgba(248, 240, 220, 0.65)');
 }
 
-/** A shop's name over its window (or above a one-storey shop's roofline). */
-export function paintShopSign({ p, lf, base, top }: AttachArgs) {
-  const { art } = p;
-  if (!lf || !art.sign || base.facade !== 'shopfront') return;
-  const sc = art.signColor ?? '#333';
-  const size = art.sign.length > 6 ? 4 : 5;
-  if (base.floors === 1 && top === base) board(p, lf, lf.a0 + 0.08, lf.a1 - 0.08, top.z1, top.z1 + 7, art.sign, size + 0.5, sc, -0.02);
-  else board(p, lf, lf.a0 + 0.06, lf.a1 - 0.06, art.floorH + 1.2, art.floorH + 6.5, art.sign, size, sc);
-}
-
-/** Rooftop sign parallel to the front, on two posts; it faces whichever camera-facing wall shares its axis. */
+/**
+ * Understated architectural parapet sign ONLY for large flat-roofed civic/campus buildings
+ * (never on pitched roofs, never on 1×1 cafés/shops/substations).
+ */
 export function paintRoofSign({ p, base, top }: AttachArgs) {
   const { iso, o, art } = p;
-  if (!art.sign || base.facade === 'shopfront') return;
+  if (!art.sign || base.facade === 'shopfront' || art.roof !== 'flat') return;
+  // Skip small 1×1 buildings so cafés, shops, and substations never have floating roof billboards.
+  if (o.w <= 1 && o.h <= 1) return;
   const l = top.local;
-  const sc = art.signColor ?? '#c33';
+  const sc = shade(art.signColor ?? '#3b4a5a', -0.12);
   const mid = (l.u0 + l.u1) / 2;
-  const half = (l.u1 - l.u0) * 0.38;
-  const vv = l.v0 + (l.v1 - l.v0) * 0.55;
+  const half = Math.min(0.42, (l.u1 - l.u0) * 0.28);
+  const vv = l.v1 - 0.04;
   const [pu0, pv0] = o.point(mid - half, vv);
   const [pu1, pv1] = o.point(mid + half, vv);
   const sf: FaceRef =
     Math.abs(pv0 - pv1) < 1e-6
       ? { face: 'sw', at: pv0, a0: Math.min(pu0, pu1), a1: Math.max(pu0, pu1) }
       : { face: 'se', at: pu0, a0: Math.min(pv0, pv1), a1: Math.max(pv0, pv1) };
-  const z0 = top.z1 + (art.roof === 'flat' ? 0 : (art.roofH ?? 0) * 0.5);
-  for (const a of [sf.a0 + 0.05, sf.a1 - 0.07]) wallOn(iso, sf, a, a + 0.02, z0, z0 + 4, '#4a4f56');
-  board(p, sf, sf.a0, sf.a1, z0 + 4, z0 + 12, art.sign, art.sign.length > 5 ? 5.5 : 6.5, sc);
+  const z0 = top.z1 + 0.4;
+  const z1 = top.z1 + 5.6;
+  wallOn(iso, sf, sf.a0, sf.a1, z0, z1, flatTone(sc, sf.face));
+  wallOn(iso, sf, sf.a0, sf.a1, z1 - 0.4, z1, 'rgba(255,255,255,0.4)');
+  iso.text(sf.face, sf.at, (sf.a0 + sf.a1) / 2, (z0 + z1) / 2, art.sign, art.sign.length > 6 ? 3.4 : 4, '#f8f6f0');
 }
 
-/** Clinic red cross on both visible walls of the top mass. */
+/** Clinic / hospital red cross on both visible walls of the top mass. */
 export function paintRedCross({ p, top }: AttachArgs) {
   const { iso } = p;
   for (const face of ['sw', 'se'] as const) {

@@ -81,31 +81,52 @@ export function groundProps(p: Painting): Prop[] {
     }
   }
   if (ex.has('tables')) {
-    const umbrellas = [art.awning ?? '#e9554a', '#f2c84b'];
-    for (const [k, tu] of [local.u0 + 0.12, local.u0 + 0.42].entries()) {
-      const tv = Math.min(local.v1 + 0.2 + k * 0.04, o.h - 0.06);
-      const r = o.rect({ u0: tu, u1: tu + 0.04, v0: tv, v1: tv + 0.04 });
+    // Realistic European/modern café terrace: timber patio deck, bistro tables with chairs,
+    // muted fabric parasols, and a tiny sidewalk A-frame menu board.
+    const deck = o.rect({ u0: local.u0 + 0.02, u1: local.u1 - 0.02, v0: local.v1 + 0.01, v1: Math.min(local.v1 + 0.28, o.h - 0.02) });
+    iso.floor(deck.u0, deck.u1, deck.v0, deck.v1, 0.15, '#c8b89d');
+    const parasols = [shade(art.awning ?? '#7a3430', -0.05), '#ece4d2'];
+    for (const [k, tu] of [local.u0 + 0.14, local.u0 + 0.44].entries()) {
+      const tv = Math.min(local.v1 + 0.18 + k * 0.02, o.h - 0.06);
+      const [u, v] = o.point(tu + 0.02, tv + 0.02);
       props.push({
-        u: r.u0,
-        v: r.v0,
+        u,
+        v,
         draw: () => {
-          const [bx, by] = iso.p((r.u0 + r.u1) / 2, (r.v0 + r.v1) / 2, 0);
-          blobShadow(ctx, bx + 3, by, 6, 2.4);
-          iso.box(r.u0, r.u1, r.v0, r.v1, 0, 5, '#7a7f86', '#5c6168', '#7a7f86');
-          const [x, y] = iso.p((r.u0 + r.u1) / 2, (r.v0 + r.v1) / 2, 7);
-          const g = ctx.createLinearGradient(x - 6, y, x + 6, y);
-          g.addColorStop(0, shade(umbrellas[k], 0.2));
-          g.addColorStop(1, shade(umbrellas[k], -0.25));
+          const [bx, by] = iso.p(u, v, 0.2);
+          blobShadow(ctx, bx + 2.5, by, 5.2, 2);
+          // Tiny bistro chairs flanking the table.
+          iso.disc(u - 0.045, v, 0.022, 1.4, '#5a4332');
+          iso.disc(u + 0.045, v, 0.022, 1.4, '#5a4332');
+          // Pedestal + crisp linen round tabletop.
+          iso.box(u - 0.008, u + 0.008, v - 0.008, v + 0.008, 0.2, 6.2, '#4a4e54', '#32363b', '#5e636b');
+          iso.disc(u, v, 0.042, 2.5, '#f6f2e8');
+          // Tailored café parasol canopy.
+          const [x, y] = iso.p(u, v, 6.4);
+          const col = parasols[k % parasols.length];
+          const g = ctx.createLinearGradient(x - 5.2, y, x + 5.2, y);
+          g.addColorStop(0, shade(col, 0.18));
+          g.addColorStop(1, shade(col, -0.22));
           ctx.fillStyle = g;
           ctx.beginPath();
-          ctx.moveTo(x, y - 2.5);
-          ctx.lineTo(x + 6, y + 0.5);
-          ctx.ellipse(x, y + 0.5, 6, 2, 0, 0, Math.PI, false);
+          ctx.moveTo(x, y - 2.2);
+          ctx.lineTo(x + 5.2, y + 0.4);
+          ctx.ellipse(x, y + 0.4, 5.2, 1.8, 0, 0, Math.PI, false);
           ctx.closePath();
           ctx.fill();
         },
       });
     }
+    // Sidewalk A-frame chalkboard menu stand near the entrance.
+    const [mu, mv] = o.point(local.u1 - 0.12, Math.min(local.v1 + 0.12, o.h - 0.05));
+    props.push({
+      u: mu,
+      v: mv,
+      draw: () => {
+        iso.box(mu - 0.022, mu + 0.022, mv - 0.015, mv + 0.015, 0.2, 3.2, '#4a3526', '#2e2118', '#5c4330');
+        iso.wall('sw', mv + 0.015, mu - 0.016, mu + 0.016, 0.8, 2.8, '#262b30');
+      },
+    });
   }
   if (ex.has('planters')) {
     for (const lu of [local.u0 + 0.04, local.u1 - 0.12]) {
