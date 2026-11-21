@@ -30,6 +30,8 @@ export interface GameEventMap {
   /** Live cost label for an in-progress drag; null when there's nothing to show. */
   toolPreview: ToolPreviewInfo | null;
   notice: Notice;
+  /** A toast that no longer applies (the Notice id): take it down now, not when it times out. */
+  dismissNotice: number;
   /** An ongoing problem was fixed: drop its alert (the Notice key) from the inbox. */
   resolve: string;
   muted: boolean;

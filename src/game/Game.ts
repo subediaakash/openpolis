@@ -185,6 +185,8 @@ export class Game {
   /** Road tools carry the new road over crossings (flyovers) instead of joining them. */
   private flyoverMode = false;
   private carrying: number | null = null;
+  /** The "Moving the …" guidance toast, taken down when the carry ends (placed, cancelled or another tool). */
+  private carryNotice: number | null = null;
   private pavementChoice = 0;
   /** Player edits so far (roads, zones, buildings, taxes), for save dirty tracking. */
   private edits = 0;
@@ -356,22 +358,23 @@ export class Game {
       this.carrying = b.id;
       this.sound.play('tool');
       const how = touch ? 'drag the map to find a spot, then tap where it should go' : 'click where it should go (Esc to cancel)';
-      this.notify('info', `Moving the ${BUILDINGS[b.def].name}: ${how}`);
+      this.carryNotice = this.notify('info', `Moving the ${BUILDINGS[b.def].name}: ${how}`);
       this.updatePreview();
       return;
     }
     const p = this.plan(null, t);
     if (!p || p.kind !== 'move') return;
-    const funds = this.city.funds;
     const moved = this.carrying;
     const carried = this.world.buildings.get(moved);
     const cap = touch ? captureUndo(this.city, carried ? [...p.plan.tiles, { x: carried.x, y: carried.y }] : p.plan.tiles) : null;
     const changed = this.execute(p, touch);
     if (cap && changed) this.offerUndo(cap, `${BUILDINGS[p.plan.building].name} moved`);
-    // Moved (money spent): back to Select with the building still selected at its new place.
-    if (this.city.funds < funds) {
+    // Moved: back to Select with nothing open (user call: the building's panel would only cover
+    // the map; the Undo bar is enough). Judged by the move itself, not by money spent.
+    if (changed) {
+      this.endCarry();
       this.setTool('select');
-      this.inspect(moved);
+      this.inspect(null);
       return;
     }
     this.updatePreview();
@@ -386,8 +389,15 @@ export class Game {
     this.inspect(null);
   }
 
+  /** Stop carrying a building, and take its guidance toast down with it. */
+  private endCarry() {
+    this.carrying = null;
+    if (this.carryNotice !== null) this.events.emit('dismissNotice', this.carryNotice);
+    this.carryNotice = null;
+  }
+
   setTool(tool: ToolId) {
-    if (tool !== 'move') this.carrying = null;
+    if (tool !== 'move') this.endCarry();
     if (isRoadTool(tool)) this.recentRoadTool = tool;
     if (tool !== this.toolId) this.sound.play('tool');
     this.toolId = tool;
@@ -1273,7 +1283,7 @@ export class Game {
   cancel() {
     if (this.carrying !== null) {
       // Put it back down where it was (nothing moved yet).
-      this.carrying = null;
+      this.endCarry();
       this.updatePreview();
       return;
     }
@@ -1338,10 +1348,13 @@ export class Game {
   }
 
   /** A toast; with a `key` it is also kept in the alerts inbox until resolved or dismissed. */
-  private notify(kind: Notice['kind'], message: string, key?: string, show: NoticeShow = 'toast') {
+  /** Show a notice; returns its id (for dismissNotice). */
+  private notify(kind: Notice['kind'], message: string, key?: string, show: NoticeShow = 'toast'): number {
     const { year, month, dayOfMonth } = this.city.date;
     const date = `${MONTH_NAMES[month]} ${dayOfMonth}, Y${year}`;
-    this.events.emit('notice', { id: ++noticeSeq, kind, message, show, ...(key && { key, date }) });
+    const id = ++noticeSeq;
+    this.events.emit('notice', { id, kind, message, show, ...(key && { key, date }) });
+    return id;
   }
 
   /** An ongoing problem is gone: clear its alert. */

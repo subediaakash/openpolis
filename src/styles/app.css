@@ -5688,6 +5688,10 @@ summary {
   body:has(.is-chip) .undo-bar {
     bottom: calc(var(--above-dock) + 64px);
   }
+  /* An open building sheet fills the bottom (after a move, say): the bar sits just above it. */
+  body:has(.info-panel) .undo-bar {
+    bottom: calc(var(--above-dock) + var(--sheet-h, 0px) + 8px);
+  }
   /*
    * Toasts slide over the top bar as a banner, one at a time (D-105): under the bar they
    * covered the Citizens and Goals panels, which are open most of the time.

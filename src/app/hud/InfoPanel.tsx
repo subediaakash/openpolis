@@ -1,5 +1,5 @@
 import { useAtomValue } from 'jotai';
-import type { ReactNode } from 'react';
+import { useCallback, useRef, type ReactNode } from 'react';
 import { SERVICE_KINDS as ALL_SERVICES, type ServiceKind } from '../../sim/buildings/catalog';
 import type { InspectInfo, StationInfo } from '../../game/events';
 import { gameAtom, inspectAtom } from '../atoms';
@@ -105,17 +105,38 @@ function StationSection({ station }: { station: StationInfo }) {
   );
 }
 
+/**
+ * Publishes the open panel's height as `--sheet-h` on the page, so things that share the bottom
+ * of a phone screen (the Undo bar) can sit just above the sheet instead of over it.
+ */
+function useSheetHeight() {
+  const observer = useRef<ResizeObserver | null>(null);
+  return useCallback((el: HTMLElement | null) => {
+    observer.current?.disconnect();
+    observer.current = null;
+    const root = document.documentElement.style;
+    if (!el) {
+      root.removeProperty('--sheet-h');
+      return;
+    }
+    const ro = new ResizeObserver(() => root.setProperty('--sheet-h', `${Math.round(el.getBoundingClientRect().height)}px`));
+    ro.observe(el);
+    observer.current = ro;
+  }, []);
+}
+
 /** Slides in when a building is clicked with the Select tool: actions first, then what matters most. */
 export function InfoPanel() {
   const info = useAtomValue(inspectAtom);
   const game = useAtomValue(gameAtom);
+  const sheetRef = useSheetHeight();
   if (!info) return null;
   const alert = alertFor(info);
   const needs = info.needs ? [...info.needs.scores].sort((a, b) => a.score - b.score) : [];
   const canRepair = info.condition !== null && (info.repairDays > 0 || info.condition < 1);
 
   return (
-    <aside className="panel info-panel" aria-label={`${info.name} details`}>
+    <aside ref={sheetRef} className="panel info-panel" aria-label={`${info.name} details`}>
       <header className="info-header">
         <div>
           <h2 className="info-title">{info.name}</h2>

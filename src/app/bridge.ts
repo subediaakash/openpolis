@@ -89,6 +89,7 @@ export function connectGameToStore(game: Game, store: Store): () => void {
       }, n.kind === 'milestone' ? NOTICE_MS * 2.5 : NOTICE_MS);
       timers.add(timer);
     }),
+    game.events.on('dismissNotice', (id) => store.set(noticesAtom, (list) => list.filter((x) => x.id !== id))),
     // An ongoing problem was fixed: its alert goes.
     game.events.on('resolve', (key) => store.set(inboxAtom, (list) => (list.some((a) => a.key === key) ? list.filter((a) => a.key !== key) : list))),
   ];

@@ -2,6 +2,12 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Phone move fix
+- Bug (user report): on phones, after moving a building it looked as if the Move tool was still on. The tool did go back to Select, but the "Moving the …: tap where it should go" toast stayed up for its full time. Now the game takes that toast down as soon as the carry ends (placed, cancelled or another tool): `notify` returns the notice id, new `dismissNotice` event (`game/events.ts`, `bridge.ts`), `Game.endCarry`.
+- Back to Select is now judged by the move happening (`execute` returned true), not by money going down, and the building's panel closes after a move (user call; it used to stay selected, see the earlier HUD entry); the Undo bar is the only thing left on screen.
+- The Undo bar no longer covers the building sheet that opens after a move: the info panel publishes its height (`--sheet-h`) and on phones the bar sits just above it.
+- Checked in Chrome at 390×844 with touch on /demo: tap building, Move, tap free land → Select active, guidance toast gone, Undo bar ends 8 px above the sheet. Tests, typecheck and lint clean.
+
 ## 2026-11-21: Terracotta theme for the whole city (D-107)
 - `render/atlas/theme/buildingPalettes.ts`: Terracotta, Harbour and Pastel palettes per building family, plus town colours (train liveries, buses, station signs, grade). `GAME_PALETTE = TERRACOTTA` (user pick).
 - Recipe buildings recolour through `GAME_RECOLOUR` (`buildings/index.ts`); trains, buses, train and bus stations and stop shelters read the town colours; `theme/grade.ts` warms the neutrals of every built atlas frame (buildings, roads, bridges, rail, furniture, stops, vehicles, trains, sites).
