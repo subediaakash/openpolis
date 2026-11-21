@@ -219,6 +219,7 @@ Mobile first; desktop unchanged unless noted.
 - [x] Guest trial: after 30 minutes play goes on but saving stops until sign-up, with a reminder every 10 minutes (D-103)
 - [ ] Revisit a placement magnifier if touch placement errors persist after undo
 - [x] Atlas memory: buildings painted for the current view rotation only, height-sorted packing, canvases emptied after GPU upload (repainted on a lost context): 399 → 141 MB of GPU texture, 7 → 4 pages (D-104)
+- [x] Happiness explained: "Holding happiness back" in Citizens say, with Show me and a Happiness map button; toasts opaque, a banner over the top bar on phones, fewer goal toasts (D-105)
 - [ ] Atlas resolution per device (1.5× on phones and low-memory devices, ~141 → ~80 MB); test on a real iPhone
 
 ## Feature Track (user order, D-067)

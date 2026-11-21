@@ -2,6 +2,13 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Happiness breakdown and calmer toasts (D-105)
+- **Sim:** `BuildingNeeds.losses` and `NeedsReport.drags` (`sim/systems/needs.ts`); 3 tests: losses add up per building, drags add up to the missing city happiness with the right homes, none without residents.
+- **HUD:** "Holding happiness back" in Citizens say (`CitizensPanel.tsx`), need words shared in `hud/needWords.ts`; Happiness map button.
+- **Toasts:** opaque; phone banner over the top bar, one at a time; grouped goal toasts, none while Goals is open, claim toast only for unlocks (`Notice.show`, `goalsOpenAtom`).
+- Checked in Chrome on /demo at 1440×900: 87% happy, rows Parks −3, Commute −3, Transit −3, Clean air −2, Safety −1, Small things −1 (= −13%); Show me opens the home, the map button turns on the happiness view. At 390×844 (touch): the panel scrolls within its height; a toast sits exactly over the top bar (top 8, 48 px) above the rail (64 px). No page errors. 366 tests pass; typecheck and lint clean.
+- **Next idea:** a map per need ("where are parks missing"), from the same scores.
+
 ## 2026-11-21: Atlas memory: 399 → 141 MB (D-104)
 - Measured the atlas by frame family (no painting): buildings ×4 view rotations were 81% of it.
 - `render/atlas/BuildingAtlas.ts`: buildings on their own pages, painted for the current rotation; `Renderer.setRotation` repaints, rebuilds and frees the old pages; `Effects.clearPops()` drops pops drawing from them.

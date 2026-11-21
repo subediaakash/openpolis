@@ -54,6 +54,12 @@ export function readyMessage(id: GoalId): string {
   return `Goal complete: ${title}! Claim ${money(reward.funds)}${unlock} in Goals.`;
 }
 
+/** One toast for several goals finishing together (each still gets its own inbox alert). */
+export function readyGroupMessage(ids: readonly GoalId[]): string {
+  const funds = ids.reduce((n, id) => n + goalDef(id).reward.funds, 0);
+  return `${ids.length} goals complete: claim ${money(funds)} in Goals.`;
+}
+
 /** The toast after claiming (or why it couldn't be claimed). */
 export function claimMessage(result: ClaimResult): string {
   if (!result.ok) return result.reason === 'claimed' ? 'That reward is already claimed' : 'That goal isn’t finished yet';

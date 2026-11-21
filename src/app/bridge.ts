@@ -14,6 +14,7 @@ import {
   inspectAtom,
   mutedAtom,
   noticesAtom,
+  goalsOpenAtom,
   inboxAtom,
   INBOX_MAX,
   type InboxAlert,
@@ -79,6 +80,8 @@ export function connectGameToStore(game: Game, store: Store): () => void {
         const alert: InboxAlert = { key, kind: n.kind, message: n.message, date: n.date ?? '', id: n.id, read: false };
         store.set(inboxAtom, (list) => [alert, ...list.filter((a) => a.key !== key)].slice(0, INBOX_MAX));
       }
+      // Some notices only file an alert, or repeat what the open Goals panel shows (D-105).
+      if (n.show === 'inbox' || (n.show === 'goals' && store.get(goalsOpenAtom))) return;
       store.set(noticesAtom, (list) => [...list.slice(-2), n]);
       const timer = setTimeout(() => {
         timers.delete(timer);

@@ -26,7 +26,7 @@ import { currentTech, researchRate, TECHS } from '../sim/research';
 import { materialStorage } from '../sim/systems/materials';
 import { collectTaxes, townHall } from '../sim/systems/budget';
 import { inspectInfo } from './inspect';
-import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyMessage } from './goals';
+import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyGroupMessage, readyMessage } from './goals';
 import { aqiBand } from '../sim/systems/air';
 import { isWaterTerrain } from '../render/transitions';
 import { windFactor } from '../sim/systems/energy';
@@ -44,7 +44,7 @@ import type { World } from '../sim/World';
 import { SoundBoard } from './audio';
 import { daylightTint, nightness } from '../render/daylight';
 import type { Point, ViewTransform } from '../render/view/ViewTransform';
-import { EventBus, type DayNightMode, type GameEventMap, type Notice, type ProgressInfo } from './events';
+import { EventBus, type DayNightMode, type GameEventMap, type Notice, type NoticeShow, type ProgressInfo } from './events';
 import { haptic } from './haptics';
 import { applyUndo, captureUndo, finishUndo, type UndoCapture, type UndoRecord } from '../sim/undo';
 import { InputController, type ScreenPoint } from './input/InputController';
@@ -707,12 +707,20 @@ export class Game {
     }
   }
 
-  /** Goals that just became ready (after an edit or a day): one toast each, kept in the inbox until claimed. */
+  /**
+   * Goals that just became ready (after an edit or a day): each kept in the inbox until claimed,
+   * and one toast for the lot, skipped while the Goals panel is open (D-105).
+   */
   private announceGoals() {
     const ready = this.sim.goals.takeReady();
     if (ready.length === 0) return;
     this.sound.play('build');
-    for (const id of ready) this.notify('milestone', readyMessage(id), `goal-${id}`);
+    if (ready.length === 1) {
+      this.notify('milestone', readyMessage(ready[0]), `goal-${ready[0]}`, 'goals');
+      return;
+    }
+    for (const id of ready) this.notify('milestone', readyMessage(id), `goal-${id}`, 'inbox');
+    this.notify('milestone', readyGroupMessage(ready), undefined, 'goals');
   }
 
   /** Take a ready goal's reward (the Goals panel's Claim button). */
@@ -724,7 +732,8 @@ export class Game {
       return;
     }
     this.sound.play('coin');
-    this.notify('milestone', claimMessage(result));
+    // The row already says Claimed and the coin sounds; a toast only adds where an unlock went (D-105).
+    if (result.reward.unlock) this.notify('milestone', claimMessage(result));
     this.resolve(`goal-${id}`);
     this.events.emit('funds', this.city.funds);
     this.emitCity();
@@ -1329,10 +1338,10 @@ export class Game {
   }
 
   /** A toast; with a `key` it is also kept in the alerts inbox until resolved or dismissed. */
-  private notify(kind: Notice['kind'], message: string, key?: string) {
+  private notify(kind: Notice['kind'], message: string, key?: string, show: NoticeShow = 'toast') {
     const { year, month, dayOfMonth } = this.city.date;
     const date = `${MONTH_NAMES[month]} ${dayOfMonth}, Y${year}`;
-    this.events.emit('notice', { id: ++noticeSeq, kind, message, ...(key && { key, date }) });
+    this.events.emit('notice', { id: ++noticeSeq, kind, message, show, ...(key && { key, date }) });
   }
 
   /** An ongoing problem is gone: clear its alert. */

@@ -118,7 +118,7 @@ describe('goals in a city', () => {
     city.goals = emptyGoals(true);
     city.stage = Stage.City;
     const commute: CommuteReport = { commuters: 5000, trainRiders: 0, busRiders: 0, avgMinutes: 12, jammedTiles: 0 };
-    const goals = new GoalSystem(city, () => ({ city, needs: { happiness: 1, abandoned: 0, complaints: [] }, commute, air: { cityAqi: 0, worstAqi: 0 } }));
+    const goals = new GoalSystem(city, () => ({ city, needs: { happiness: 1, abandoned: 0, complaints: [], drags: [] }, commute, air: { cityAqi: 0, worstAqi: 0 } }));
     const days = goalDef('quickCommute').days ?? 0;
     for (let d = 0; d < days - 1; d++) goals.onDay();
     expect(city.goals.streaks.get('quickCommute')).toBe(days - 1);

@@ -20,6 +20,8 @@ export const toolPreviewAtom = atom<ToolPreviewInfo | null>(null);
 /** The last touch action the Undo bar offers (D-101). */
 export const undoAtom = atom<UndoOffer | null>(null);
 export const noticesAtom = atom<readonly Notice[]>([]);
+/** Whether the Goals panel is open on screen: goal toasts would only repeat it (D-105). */
+export const goalsOpenAtom = atom(false);
 
 /** An alert kept in the inbox until the game resolves it or the player dismisses it. */
 export interface InboxAlert {

@@ -254,7 +254,14 @@ export interface Notice {
   key?: string;
   /** The game date it happened, for the inbox ("Jul 9, Y3"). */
   date?: string;
+  /**
+   * How it shows (D-105): 'toast' (the default) pops up; 'inbox' only files the alert (another
+   * toast already says it); 'goals' pops up unless the Goals panel is open, which already shows it.
+   */
+  show?: NoticeShow;
 }
+
+export type NoticeShow = 'toast' | 'inbox' | 'goals';
 
 export interface DebugStats {
   fps: number;

@@ -1,8 +1,8 @@
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GoalInfo } from '../../game/events';
 import type { GoalId } from '../../sim/goals/catalog';
-import { cityAtom, gameAtom } from '../atoms';
+import { cityAtom, gameAtom, goalsOpenAtom } from '../atoms';
 import { StageRing } from './StageChip';
 import { useRememberedOpen } from './useRememberedOpen';
 
@@ -69,6 +69,13 @@ export function GoalsPanel() {
   const onClaim = useCallback((id: GoalId) => game?.claimGoal(id), [game]);
   const { leaving, claim } = useLeavingRows(onClaim);
   const goals = city?.goals;
+  // Tell the toasts when the panel is open on screen, so goal toasts don't repeat it (D-105).
+  const setOpenOnScreen = useSetAtom(goalsOpenAtom);
+  const shown = open && !!goals;
+  useEffect(() => {
+    setOpenOnScreen(shown);
+    return () => setOpenOnScreen(false);
+  }, [shown, setOpenOnScreen]);
   if (!city || !goals) return null;
 
   const activeIds = new Set(goals.active.map((g) => g.id));

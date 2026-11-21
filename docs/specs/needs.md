@@ -35,7 +35,9 @@ Every finished, connected zoned building scores each need it has from 0 (bad) to
 - **Shops and offices:** workers 0.35, safety 0.25, customers 0.25, clean air 0.15.
 - **Industry:** workers 0.6, safety 0.4.
 
-**City happiness** is the resident-weighted average over homes, shown in the top bar.
+**City happiness** is the resident-weighted average over homes, shown in the top bar. It is an average, not a head count: "86% happy" can mean every home sits at 86% with nobody unhappy enough to complain.
+
+**What's holding happiness back** (D-105): the city's missing happiness split by need. A home's loss on a need is `weight × (1 − score) ÷ its total weight`, so its losses add up to `1 − happiness`. Summed over homes and weighted by residents the same way as city happiness, the losses add up exactly to `1 − city happiness`. The report keeps the needs costing at least half a point, largest first (at most 5), each with how many homes fall short on it and the home losing the most to it.
 
 ## Effects
 
@@ -51,9 +53,10 @@ Every finished, connected zoned building scores each need it has from 0 (bad) to
 
 - **What triggers one:** a building below 0.6 happiness complains about its **worst need**, the one with the biggest weighted shortfall. Abandoned buildings complain "This place is abandoned".
 - **Speech bubbles:** up to 12 on screen at a time, over complaining buildings in view, each showing an icon for the need. Each bubble lasts about 3 s, then moves to another complaining building, so the screen stays readable. They're hidden below 0.5× zoom.
-- **"Citizens say…" panel** (top left, shown when there are complaints):
+- **"Citizens say…" panel** (top left, always there as a toggle):
   - the top 4 complaints with how many buildings share them, e.g. "We need a school nearby (12)";
-  - a **Show me** button on each that moves the camera to the unhappiest building with that complaint.
+  - a **Show me** button on each that moves the camera to the unhappiest building with that complaint;
+  - below them, **What's holding happiness back** (D-105): each need from the report as "Parks −5% · short in 120 homes" with a bar and **Show me** (opens the home losing the most to it), then a **Happiness map** button that turns on the happiness view. With no complaints the panel says no home is unhappy enough to complain and still shows the breakdown, so the missing percentage always has an answer.
 
 | Complaint | Message |
 |---|---|

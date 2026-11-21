@@ -84,4 +84,71 @@ describe('needs and happiness', () => {
     for (let d = 0; d < BALANCE.recoverDays + 20; d++) sim.day();
     expect(factory.abandoned).toBe(false);
   });
+
+  describe("what's holding happiness back (D-105)", () => {
+    /** The serviced home at the west end, a bare one at the far end, and a few days to settle. */
+    function twoHomes() {
+      const t = town();
+      t.place('walkup', 4, 19);
+      t.place('walkup', 33, 19);
+      t.place('police_station', 5, 21);
+      t.place('clinic', 7, 21);
+      t.place('corner_shop', 10, 21);
+      t.sim.worldChanged({ roads: true });
+      for (let d = 0; d < 20; d++) t.sim.day();
+      return t;
+    }
+
+    it("each building's losses add up to its missing happiness", () => {
+      const { sim } = twoHomes();
+      expect(sim.needs.byBuilding.size).toBeGreaterThan(0);
+      for (const n of sim.needs.byBuilding.values()) {
+        const sum = Object.values(n.losses).reduce((a, b) => a + (b ?? 0), 0);
+        expect(sum).toBeCloseTo(1 - n.happiness, 9);
+        for (const loss of Object.values(n.losses)) expect(loss).toBeGreaterThanOrEqual(0);
+      }
+    });
+
+    it('the city breakdown adds up to the missing city happiness, largest first, pointing at homes', () => {
+      const { w, sim } = twoHomes();
+      const r = sim.needs.report;
+      expect(r.happiness).toBeLessThan(1);
+      expect(r.drags.length).toBeGreaterThan(0);
+      // Every need, unfiltered, from the per-building losses, weighted by residents.
+      let people = 0;
+      const full = new Map<string, number>();
+      for (const b of w.buildings.values()) {
+        const n = sim.needs.byBuilding.get(b.id);
+        if (!n || b.occupants === 0 || b.def !== 'walkup') continue;
+        people += b.occupants;
+        for (const [k, loss] of Object.entries(n.losses)) full.set(k, (full.get(k) ?? 0) + b.occupants * (loss ?? 0));
+      }
+      const total = [...full.values()].reduce((a, b) => a + b, 0) / people;
+      expect(total).toBeCloseTo(1 - r.happiness, 9);
+      // The report keeps the big ones, exactly, in order.
+      for (const d of r.drags) {
+        expect(d.loss).toBeCloseTo((full.get(d.kind) ?? 0) / people, 9);
+        expect(d.loss).toBeGreaterThanOrEqual(0.005);
+        expect(d.homes).toBeGreaterThan(0);
+        const home = w.buildings.get(d.building);
+        expect(home?.def).toBe('walkup');
+        expect(home?.occupants).toBeGreaterThan(0);
+      }
+      for (let k = 1; k < r.drags.length; k++) expect(r.drags[k - 1].loss).toBeGreaterThanOrEqual(r.drags[k].loss);
+      expect(r.drags.length).toBeLessThanOrEqual(5);
+      // Neither home has a fire station, but only the far one also lacks police: it loses the most to safety.
+      const safety = r.drags.find((d) => d.kind === 'safety');
+      expect(safety?.building).toBe(building(w, 'walkup', 33).id);
+    });
+
+    it('a city with nobody living in it has nothing holding it back', () => {
+      const { sim, place } = town();
+      place('small_office', 11, 21);
+      sim.worldChanged({ roads: true });
+      for (let d = 0; d < 5; d++) sim.day();
+      expect(sim.needs.report.happiness).toBe(1);
+      expect(sim.needs.report.drags).toEqual([]);
+    });
+  });
 });
+

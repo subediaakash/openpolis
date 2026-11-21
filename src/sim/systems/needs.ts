@@ -122,6 +122,11 @@ const RADIUS = { shopping: 12, parks: 6, highway: 2 } as const;
 /** One building's needs (only the ones it has) and the result. */
 export interface BuildingNeeds {
   scores: Partial<Record<NeedKind, number>>;
+  /**
+   * Happiness each need costs this building: `weight × (1 − score) ÷ total weight`. The losses
+   * add up to `1 − happiness` (D-105).
+   */
+  losses: Partial<Record<NeedKind, number>>;
   happiness: number;
   /** Worst need when unhappy enough to complain, or 'abandoned'. */
   complaint: ComplaintKind | null;
@@ -140,13 +145,33 @@ export interface Complaint {
   stats: readonly { label: string; value: string }[];
 }
 
+/** One need's share of the city's missing happiness (D-105). */
+export interface HappinessDrag {
+  kind: NeedKind;
+  /** City happiness this need costs (0..1), weighted by residents like `NeedsReport.happiness`. */
+  loss: number;
+  /** Homes with people that fall short on it. */
+  homes: number;
+  /** The home losing the most happiness to it (for "Show me"). */
+  building: number;
+}
+
 export interface NeedsReport {
   /** Resident-weighted average happiness of homes (0..1); 1 with no residents. */
   happiness: number;
   abandoned: number;
   /** Most common complaints first, at most 4. */
   complaints: Complaint[];
+  /**
+   * What the missing happiness is made of: needs costing at least DRAG_MIN, largest first, at
+   * most DRAG_MAX. All needs' losses (shown or not) add up to `1 − happiness`.
+   */
+  drags: HappinessDrag[];
 }
+
+/** A need must cost at least half a point of city happiness to be listed (D-105). */
+const DRAG_MIN = 0.005;
+const DRAG_MAX = 5;
 
 function needWeights(def: BuildingDef, b: BuildingInstance, stage: Stage): Weights | null {
   if (def.category === 'civic') return null;
@@ -179,7 +204,7 @@ export class NeedsSystem implements SimSystem {
   readonly name = 'needs';
   /** Per building id: its scores, happiness and complaint. */
   readonly byBuilding = new Map<number, BuildingNeeds>();
-  report: NeedsReport = { happiness: 1, abandoned: 0, complaints: [] };
+  report: NeedsReport = { happiness: 1, abandoned: 0, complaints: [], drags: [] };
 
   private readonly world: World;
   private readonly commute: CommuteSystem | null;
@@ -311,10 +336,12 @@ export class NeedsSystem implements SimSystem {
       }
       happiness = total === 0 ? 1 : happiness / total;
       b.happiness = happiness;
+      const losses: Partial<Record<NeedKind, number>> = {};
+      if (total > 0) for (const kind of kinds) losses[kind] = ((weights[kind] ?? 0) * (1 - (scores[kind] ?? 1))) / total;
       // Unhappy homes complain about their worst need; content ones still ask for their tier's expectation.
       const request = d.category === 'residential' ? EXPECTATIONS.find((k) => weights[k] !== undefined && (scores[k] ?? 1) < BALANCE.requestLine) : undefined;
       const complaint: ComplaintKind | null = b.abandoned ? 'abandoned' : happiness < BALANCE.complainLine ? worst : (request ?? null);
-      this.byBuilding.set(b.id, { scores, happiness, complaint });
+      this.byBuilding.set(b.id, { scores, losses, happiness, complaint });
     }
     this.summarise();
   }
@@ -401,6 +428,8 @@ export class NeedsSystem implements SimSystem {
     let weighted = 0;
     let abandoned = 0;
     const groups = new Map<ComplaintKind, { count: number; worst: BuildingInstance | null }>();
+    /** Per need: resident-weighted loss, homes short on it, and the home losing the most. */
+    const drag = new Map<NeedKind, { loss: number; homes: number; worst: number; worstLoss: number }>();
     for (const b of this.world.buildings.values()) {
       if (b.abandoned) abandoned++;
       const n = this.byBuilding.get(b.id);
@@ -408,6 +437,18 @@ export class NeedsSystem implements SimSystem {
       if (BUILDINGS[b.def].category === 'residential' && b.occupants > 0) {
         people += b.occupants;
         weighted += b.occupants * n.happiness;
+        for (const kind of NEED_KINDS) {
+          const loss = n.losses[kind];
+          if (loss === undefined || loss <= 0) continue;
+          const d = drag.get(kind) ?? { loss: 0, homes: 0, worst: b.id, worstLoss: 0 };
+          d.loss += b.occupants * loss;
+          d.homes++;
+          if (loss > d.worstLoss) {
+            d.worstLoss = loss;
+            d.worst = b.id;
+          }
+          drag.set(kind, d);
+        }
       }
       if (!n.complaint) continue;
       const g = groups.get(n.complaint) ?? { count: 0, worst: null };
@@ -430,7 +471,15 @@ export class NeedsSystem implements SimSystem {
       });
     }
     complaints.sort((a, b) => b.count - a.count);
-    this.report = { happiness: people === 0 ? 1 : weighted / people, abandoned, complaints: complaints.slice(0, 4) };
+    const drags: HappinessDrag[] =
+      people === 0
+        ? []
+        : [...drag]
+            .map(([kind, d]) => ({ kind, loss: d.loss / people, homes: d.homes, building: d.worst }))
+            .filter((d) => d.loss >= DRAG_MIN)
+            .sort((a, b) => b.loss - a.loss)
+            .slice(0, DRAG_MAX);
+    this.report = { happiness: people === 0 ? 1 : weighted / people, abandoned, complaints: complaints.slice(0, 4), drags };
   }
 
   private complaintStats(kind: ComplaintKind, b: BuildingInstance): readonly { label: string; value: string }[] {
