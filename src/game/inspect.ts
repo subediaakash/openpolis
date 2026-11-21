@@ -8,6 +8,7 @@ import { COMPLAINT_TEXT, NEED_KINDS } from '../sim/systems/needs';
 import { isWorking, needsUtilities } from '../sim/systems/utilities';
 import { platformOf, stationName } from '../sim/rail';
 import type { InspectInfo } from './events';
+import { residentsOf } from '../sim/stories/people';
 
 /**
  * What the info panel shows for a building (app/hud/InfoPanel.tsx), read from the simulation.
@@ -54,6 +55,7 @@ export function inspectInfo(sim: Simulation, b: BuildingInstance): InspectInfo {
     needs: needsInfo(sim, b.id),
     abandoned: b.abandoned,
     lifestyle: d.category === 'residential' ? lifestyleInfo(b, sim.city.stage) : null,
+    residents: d.category === 'residential' ? residentsOf(sim.world, b) : null,
     garbage: d.category !== 'civic' && sim.city.stage >= Stage.Village ? b.garbage : null,
     facility: d.garbage
       ? {

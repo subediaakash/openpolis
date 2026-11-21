@@ -217,6 +217,22 @@ export function InfoPanel() {
       </div>
       {info.lifestyle && <p className="info-note">{info.lifestyle.note}</p>}
 
+      {info.residents && info.residents.length > 0 && (
+        <section className="info-section">
+          <h3 className="info-section-title">Who lives here</h3>
+          <ul className="residents">
+            {info.residents.map((r) => (
+              <li key={r.name} className="resident">
+                <span className="resident-name">
+                  {r.name}, {r.age}
+                </span>
+                <span className="resident-job">{r.job}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {needs.length > 0 && (
         <section className="info-section">
           <h3 className="info-section-title">Needs · worst first</h3>

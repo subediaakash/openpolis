@@ -12,15 +12,15 @@ const rgb = (css: string) => {
 
 describe('building colour themes (D-107)', () => {
   it('recolours walls and roofs from the family palette and keeps the form', () => {
-    const art = ART.cafe[5];
-    const out = applyPalette(art, 'cafe', 5, TERRACOTTA);
-    const fam = TERRACOTTA.families[paletteFamily('cafe')];
+    const art = ART.tech_campus[0];
+    const out = applyPalette(art, 'tech_campus', 0, TERRACOTTA);
+    const fam = TERRACOTTA.families[paletteFamily('tech_campus')];
     expect(fam.walls).toContain(out.wall);
     expect(fam.roofs).toContain(out.roofColor);
     expect(out.roof).toBe(art.roof);
     expect(out.facade).toBe(art.facade);
     expect(out.masses.length).toBe(art.masses.length);
-    expect(ART.cafe[5]).toBe(art); // the recipe itself is untouched
+    expect(ART.tech_campus[0]).toBe(art); // the recipe itself is untouched
   });
   it('every palette has a colour for every family and a livery for every train', () => {
     for (const p of BUILDING_PALETTES) {

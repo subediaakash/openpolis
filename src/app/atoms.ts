@@ -5,6 +5,8 @@ import type { ToolId } from '../game/tools';
 import type { SaveStatus } from '../save/CitySaver';
 import type { ApiUser, AuthProviders } from '../shared/api';
 import type { BuildingId } from '../sim/buildings/catalog';
+import type { Story } from '../sim/stories/stories';
+import type { Newspaper } from '../game/events';
 
 /** UI state only. Game state lives in the City/World; these atoms mirror what the HUD shows. */
 export const debugVisibleAtom = atom(false);
@@ -72,3 +74,8 @@ export const authNoticeAtom = atom<string | null>(null);
 export const saveStatusAtom = atom<SaveStatus | null>(null);
 /** A guest past the trial, or offline too long (D-103): play goes on, saving stops. */
 export const guestSavingPausedAtom = atom(false);
+
+/** Recent citizen stories, newest first (D-111). */
+export const storiesAtom = atom<readonly Story[]>([]);
+/** The latest newspaper and whether it has been opened. */
+export const newspaperAtom = atom<{ readonly paper: Newspaper; readonly read: boolean } | null>(null);

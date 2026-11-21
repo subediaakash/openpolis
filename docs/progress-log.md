@@ -2,6 +2,19 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Citizen stories and the newspaper (D-111)
+- Sim: `src/sim/stories/people.ts` (residents), `stories.ts` (`StorySystem`: daily stories, monthly `Edition`); `DayOutcome.stories` and `.edition`; `Simulation.stories`; budget `stories.day` 1 ms (measured 0.06).
+- Game: `stories` and `newspaper` events, `InspectInfo.residents`, `Game.emitStories`, a toast when the paper is out.
+- HUD: Who lives here (InfoPanel), Around town (CitizensPanel), `NewspaperButton` (top bar, unread dot, front-page popover; full width on phones).
+- Spec `docs/specs/stories.md`. 4 new tests (stable residents with fitting jobs, stories from real changes, the edition, nothing in the city changes). Checked in Chrome on /demo at 1440×900 and 390×844: the paper arrives at month end, Around town and residents show; no page errors. 374 tests, typecheck and lint clean.
+- **Next:** H2 incidents you can watch (dispatch along roads), which will feed more stories.
+
+## 2026-11-21: Shops, industry and services restyled (D-110)
+- `render/atlas/lowrise/`: cornerShop, cafe, supermarket, workshop, warehouse, factory (with `factorySmoke`), school, policeStation, fireStation, clinic, hospital, university; kit gained `shopfront`, `awning`, `sign`, `redCross`, `around`. Their recipes are deleted.
+- Checked in Chrome: art gallery for all twelve in four rotations, /demo; atlas 165 MB, 307 ms; no page errors. 370 tests, typecheck, lint and build clean.
+- **Left on recipes:** tech campus, trauma centre, recycling centre, incinerator, research centre, substation.
+- **Next (user order):** citizen stories (roadmap H3).
+
 ## 2026-11-21: Warm towers and modern homes everywhere (D-109)
 - Towers: 6 office, 4 condo, 3 hotel designs in the skyscraper kit; old glass tower modules deleted.
 - `render/atlas/lowrise/`: kit plus cottage, family house, townhouses, villa, walk-up, apartment block, luxury apartments, small office, creative office; residential and mid-rise office recipes deleted. New skins `tiles`, `roofed`; `stoneGrid` shutters.

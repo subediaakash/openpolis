@@ -28,6 +28,8 @@ import {
   worldVersionAtom,
   toolPreviewAtom,
   undoAtom,
+  storiesAtom,
+  newspaperAtom,
 } from './atoms';
 
 type Store = ReturnType<typeof createStore>;
@@ -73,6 +75,8 @@ export function connectGameToStore(game: Game, store: Store): () => void {
     game.events.on('inspect', (i) => store.set(inspectAtom, i)),
     game.events.on('toolPreview', (p) => store.set(toolPreviewAtom, p)),
     game.events.on('undo', (u) => store.set(undoAtom, u)),
+    game.events.on('stories', (list) => store.set(storiesAtom, list)),
+    game.events.on('newspaper', (paper) => store.set(newspaperAtom, { paper, read: false })),
     game.events.on('notice', (n) => {
       // Alerts with a key stay in the inbox: a newer one with the same key replaces the older.
       const key = n.key;
@@ -95,6 +99,7 @@ export function connectGameToStore(game: Game, store: Store): () => void {
   ];
   game.emitCity();
   game.emitBudget();
+  game.emitStories();
   return () => {
     offs.forEach((off) => off());
     timers.forEach(clearTimeout);

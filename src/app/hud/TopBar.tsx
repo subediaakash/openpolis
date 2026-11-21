@@ -10,6 +10,7 @@ import { useStartTour } from '../tour/tourState';
 import { SaveStatus } from './SaveStatus';
 import { StageChip } from './StageChip';
 import { AlertsButton } from './AlertsButton';
+import { NewspaperButton } from './NewspaperButton';
 import { aqiBand } from '../../sim/systems/air';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
@@ -394,6 +395,7 @@ function PhoneTopBar() {
           {speedGlyph(paused ? 1 : speed)}
         </button>
       </div>
+      <NewspaperButton />
       <AlertsButton />
     </div>
   );
@@ -535,6 +537,7 @@ function WideTopBar({ cityName, onNewCity, onSave, beforeLogout }: TopBarProps) 
           </svg>
         </button>
       </Fold>
+      <NewspaperButton />
       <AlertsButton />
       <button type="button" className="icon-button" title="Tour the basics" aria-label="Tour the basics" onClick={startTour}>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">

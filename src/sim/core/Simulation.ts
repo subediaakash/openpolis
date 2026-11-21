@@ -24,6 +24,7 @@ import { UtilitiesSystem, updateUtilities, type UtilityReport } from '../systems
 import type { World } from '../World';
 import { emptyOutcome, type DayOutcome, type SimSystem, type WorldChange } from './System';
 import { SystemTimings } from './timings';
+import { StorySystem } from '../stories/stories';
 
 /** A calendar day every this many ticks. */
 export const TICKS_PER_DAY = BALANCE.secondsPerDay * SIM_TICK_HZ;
@@ -57,6 +58,8 @@ export class Simulation {
   readonly trains: TrainSystem;
   readonly lifestyle: LifestyleSystem;
   readonly goals: GoalSystem;
+  /** Citizen stories and the monthly newspaper (D-111); reads the others, changes nothing. */
+  readonly stories: StorySystem;
   /** Run after any change to roads or buildings. */
   private readonly onChange: readonly SimSystem[];
   /** Random streams whose state is saved, so a loaded city continues exactly (sim/save.ts). */
@@ -91,6 +94,7 @@ export class Simulation {
     if (!city.locked) this.followPopulation();
     this.trains = new TrainSystem(world, this.commute);
     this.goals = new GoalSystem(city, () => ({ city, needs: this.needs.report, commute: this.commute.report, air: this.air.report }));
+    this.stories = new StorySystem(city, () => this.needs.report, (id) => this.needs.byBuilding.get(id)?.scores);
     // Incidents next to last: vehicles re-route on the entrances and roads the others just brought
     // up to date. Goals last: they read every other system's report.
     this.onChange = [this.access, this.utilities, this.coverage, this.commute, this.air, this.needs, this.traffic, this.trains, this.incidents, this.goals];
@@ -129,10 +133,12 @@ export class Simulation {
       out.research = researchDay(this.city);
     });
     t.run('goals.day', () => this.goals.onDay());
+    t.run('stories.day', () => this.stories.onDay(out));
     if (this.city.day % BALANCE.daysPerMonth === 0) {
       t.run('budget.month', () => this.budget.onMonth(out));
       t.run('garbage.month', () => this.garbage.onMonth());
       this.incidents.onMonth();
+      out.edition = this.stories.onMonth();
     }
     return out;
   }

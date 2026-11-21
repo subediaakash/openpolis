@@ -74,4 +74,5 @@ export const SYSTEM_BUDGETS_MS: Readonly<Record<string, number>> = {
   'budget.month': 1,
   'goals.day': 1,
   'goals.change': 1,
+  'stories.day': 1,
 };

@@ -196,6 +196,7 @@ export class Game {
     this.sim = sim;
     this.city = sim.city;
     this.options = options;
+    sim.stories.cityName = options.name || 'the city';
     this.renderer = renderer;
     this.input = new InputController(renderer.app.canvas, renderer.camera, {
       onPointer: (p) => this.updateHover(p),
@@ -662,6 +663,7 @@ export class Game {
 
   private newDay(out: DayOutcome) {
     this.showDay(out);
+    this.showStories(out);
     this.explainMaterials();
     this.showMilestones(out);
     this.announceGoals();
@@ -695,6 +697,27 @@ export class Game {
     this.emitCity();
     this.emitBudget();
     this.emitInspect();
+  }
+
+  /** The newspaper's name: the city's own paper. */
+  private get paperName(): string {
+    return `The ${this.options.name || 'City'} Herald`;
+  }
+
+  /** New citizen stories for the feed, and the month's newspaper when it comes out (D-111). */
+  private showStories(out: DayOutcome) {
+    if (out.stories.length > 0) this.events.emit('stories', this.sim.stories.recent);
+    if (out.edition) {
+      this.events.emit('newspaper', { ...out.edition, paper: this.paperName });
+      this.notify('info', `${this.paperName} is out: ${out.edition.headline}`);
+    }
+  }
+
+  /** The current feed and latest paper (when the HUD connects). */
+  emitStories() {
+    this.events.emit('stories', this.sim.stories.recent);
+    const e = this.sim.stories.latest;
+    if (e) this.events.emit('newspaper', { ...e, paper: this.paperName });
   }
 
   /** A new stage (with what it unlocks) or the first homes reaching a better lifestyle. */

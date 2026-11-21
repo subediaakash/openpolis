@@ -260,7 +260,7 @@ Mobile first; desktop unchanged unless noted.
 - [ ] **H. Engagement** (user order, 2026-11-21): one feature per branch and PR
   - [x] H1 City goals → [specs/goals.md](specs/goals.md) (D-100): four optional goals per stage, instant and held, cash rewards and landmarks earned early; Goals panel in a left rail with Citizens say; claim flow; one unlock rule (`sim/unlocks.ts`)
   - [ ] H2 Incidents you can watch: E3 dispatch along real roads, fire spread, markers and toasts
-  - [ ] H3 Citizen stories and a city newspaper
+  - [x] H3 Citizen stories and a city newspaper → [specs/stories.md](specs/stories.md) (D-111)
 
 ## Art Track (runs alongside the phases; D-066)
 
@@ -272,7 +272,8 @@ Mobile first; desktop unchanged unless noted.
 - [x] Landmarks: Sky Tower, Sail Hotel, Observation Wheel, Theme Park (D-096)
 - [x] Modern office tower, condo tower, hotel, shopping complex and train station (D-096)
 - [x] Warm modern homes, apartments, mid-rise offices and towers (D-108, D-109)
-- [ ] Modern restyle of the remaining buildings: shops, industry, services, utilities and energy
+- [x] Warm shops, industry and services (D-110)
+- [ ] Restyle the last recipe buildings (tech campus, trauma centre, recycling centre, incinerator, research centre, substation), utilities and energy
 - [ ] Restyle roads to match
 - [x] Ambient life: swaying trees, night window lights, beacons, fountains, birds, cloud shadows (D-072)
 

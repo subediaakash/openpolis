@@ -6,7 +6,8 @@ import { loft, planShadow, prism } from '../modern/loft';
 import { rect, type Pt } from '../modern/plans';
 import { panel, sideRef } from '../modern/sides';
 import { solid } from '../modern/skins';
-import { roofed, stoneGrid, tiles } from '../modern/towerSkins';
+import { finGlass, roofed, stoneGrid, tiles } from '../modern/towerSkins';
+import { nameBand } from '../modern/props';
 import { GAME_PALETTE } from '../theme/buildingPalettes';
 
 /**
@@ -22,6 +23,8 @@ export const LOW = {
   aptWalls: P.apartments.walls,
   roofs: P.homes.roofs,
   shutters: ['#2f6b5e', '#6e4a36', '#3a5f8a', '#8a3b2e'],
+  /** Awnings and signs for shops. */
+  accents: P.shops.accents,
   glass: '#33414a',
   door: '#5a3a28',
   timber: '#a8784c',
@@ -130,3 +133,41 @@ export function inOrder(o: Orient, parts: readonly { readonly p: Pt; readonly dr
 
 /** A painter for a building family: its designs, picked by variant. */
 export type Design = (iso: IsoFrame, o: Orient, variant: number) => void;
+
+/** A glazed ground floor (shopfront, lobby, café) from 0 to 7 px, framed in `frame`. */
+export function shopfront(iso: IsoFrame, o: Orient, p: Pt, hw: number, hd: number, frame: string) {
+  prism(iso, o, p, rect(hw, hd), 0, 7, finGlass({ tint: '#38434c', fin: frame, floorH: 7, bay: 0.13, finShare: 0.28 }), null);
+}
+
+/** A striped awning over the front at height z, seen only when the front faces the camera. */
+export function awning(iso: IsoFrame, o: Orient, p: Pt, hw: number, hd: number, z: number, color: string, depth = 0.07) {
+  if (!sideRef(o, p, hw, hd, 'front')) return;
+  prism(iso, o, [p[0], p[1] + hd + depth / 2], rect(hw * 0.92, depth / 2), z, z + 1, finGlass({ tint: color, fin: '#f6f1e6', floorH: 1, bay: 0.06, finShare: 0.5 }));
+}
+
+/** A lit name sign on whichever side of the block faces the camera. */
+export function sign(iso: IsoFrame, o: Orient, p: Pt, hw: number, hd: number, z: number, text: string, glow: string, size = 2.6) {
+  nameBand(iso, o, p, hw, hd, z, text, glow, size);
+}
+
+/** Standing props round a building: those behind `centre` first, then `draw`, then the rest (any rotation). */
+export function around(o: Orient, centre: Pt, props: readonly Item[], draw: () => void) {
+  const middle = at(o, centre[0], centre[1]).depth;
+  drawItems(props.filter((x) => x.depth < middle));
+  draw();
+  drawItems(props.filter((x) => x.depth >= middle));
+}
+
+/** A red cross on a white panel, on whichever side of the block faces the camera (clinics, hospitals). */
+export function redCross(iso: IsoFrame, o: Orient, p: Pt, hw: number, hd: number, z: number, size = 0.12) {
+  for (const side of ['front', 'right', 'left'] as const) {
+    const s = sideRef(o, p, hw, hd, side, 0.01);
+    if (!s) continue;
+    const span = (side === 'front' ? hw : hd) * 2;
+    const a = size / span;
+    panel(iso, s, 0.5 - a, 0.5 + a, z - 4, z + 4, '#f8f6f1');
+    panel(iso, s, 0.5 - a * 0.25, 0.5 + a * 0.25, z - 3, z + 3, '#d23b3b');
+    panel(iso, s, 0.5 - a * 0.75, 0.5 + a * 0.75, z - 0.9, z + 0.9, '#d23b3b');
+    return;
+  }
+}

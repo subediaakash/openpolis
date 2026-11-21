@@ -421,6 +421,157 @@ body:has(.road-picker:not(.is-chip)) .undo-bar {
   display: none;
 }
 
+/* ---------- Citizen stories and the newspaper (D-111) ---------- */
+.residents {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.resident {
+  display: grid;
+  gap: 1px;
+}
+.resident-name {
+  font-weight: 600;
+}
+.resident-job {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.around {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-panel);
+}
+.around-title,
+.paper-section-title {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+.around-list,
+.paper-stories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.around-item,
+.paper-stories li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.around-text,
+.paper-stories li > span {
+  flex: 1;
+  min-width: 0;
+}
+.paper-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.paper-button {
+  position: relative;
+}
+.paper-button.is-open {
+  background: var(--bg-panel-hover);
+}
+.paper-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg-panel);
+}
+.paper {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: -8px;
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(420px, calc(100vw - 24px));
+  max-height: calc(100dvh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 14px 16px 16px;
+  font-size: 13px;
+  /* Inside the top bar, which keeps its labels on one line: the paper must wrap. */
+  white-space: normal;
+  background: linear-gradient(var(--bg-panel), var(--bg-panel)), var(--bg-app);
+}
+.paper-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--text);
+}
+.paper-name {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+.paper-date {
+  color: var(--text-dim);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.paper-headline {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 22px;
+  line-height: 1.2;
+}
+.paper-lead {
+  margin: 0;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+.paper-section {
+  padding-top: 8px;
+  border-top: 1px solid var(--border-panel);
+}
+.paper-opinion blockquote {
+  margin: 0 0 6px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 15px;
+  font-style: italic;
+}
+.paper-opinion cite {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font);
+  font-size: 12px;
+  font-style: normal;
+  color: var(--text-dim);
+}
+@media (max-width: 900px) and (min-height: 521px) {
+  /* Phones held upright: the paper opens under the top bar, across the screen. */
+  .paper {
+    position: fixed;
+    top: var(--below-bar);
+    left: calc(8px + var(--safe-l));
+    right: calc(8px + var(--safe-r));
+    width: auto;
+    max-height: calc(100dvh - var(--below-bar) - var(--above-dock) - 8px);
+  }
+}
+
 /* ---------- Notices ---------- */
 .notices {
   position: absolute;

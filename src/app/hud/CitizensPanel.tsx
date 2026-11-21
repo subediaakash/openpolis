@@ -1,7 +1,7 @@
 import { useAtomValue } from 'jotai';
 import type { Game } from '../../game/Game';
 import type { ComplaintKind, NeedsReport } from '../../sim/systems/needs';
-import { cityAtom, gameAtom, happinessViewAtom } from '../atoms';
+import { cityAtom, gameAtom, happinessViewAtom, storiesAtom } from '../atoms';
 import { NEED_HINT, NEED_LABEL } from './needWords';
 import { useRememberedOpen } from './useRememberedOpen';
 
@@ -84,6 +84,7 @@ export function CitizensPanel() {
           </ul>
         ))}
       {open && <HappinessDrags needs={city.needs} game={game} mapOn={mapOn} />}
+      {open && <AroundTown game={game} />}
     </aside>
   );
 }
@@ -146,6 +147,27 @@ function HappinessDrags({ needs, game, mapOn }: DragsProps) {
       <button type="button" className="drags-map" aria-pressed={mapOn} onClick={() => game?.setHappinessView(!mapOn)}>
         {mapOn ? 'Hide happiness map' : 'Happiness map'}
       </button>
+    </section>
+  );
+}
+
+/** "Around town" (D-111): the latest citizen stories, each with the home it happened at. */
+function AroundTown({ game }: { game: Game | null }) {
+  const stories = useAtomValue(storiesAtom);
+  if (stories.length === 0) return null;
+  return (
+    <section className="around">
+      <h3 className="around-title">Around town</h3>
+      <ul className="around-list">
+        {stories.slice(0, 4).map((s) => (
+          <li key={s.id} className={`around-item around-${s.kind}`}>
+            <span className="around-text">{s.text}</span>
+            <button type="button" className="citizens-show" onClick={() => game?.focusBuilding(s.building)}>
+              Show me
+            </button>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }

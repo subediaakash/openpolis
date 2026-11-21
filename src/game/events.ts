@@ -14,6 +14,8 @@ import type { TechId } from '../sim/research';
 import type { GoalId } from '../sim/goals/catalog';
 import type { MaterialsReport } from '../sim/systems/materials';
 import type { ToolId } from './tools';
+import type { Edition, Story } from '../sim/stories/stories';
+import type { Resident } from '../sim/stories/people';
 
 /** Typed event bus: the game emits, the UI bridge / renderer listen. Nothing polls. */
 export interface GameEventMap {
@@ -52,6 +54,15 @@ export interface GameEventMap {
   inspect: InspectInfo | null;
   /** A touch action that can still be undone, or null once it can't (D-101). */
   undo: UndoOffer | null;
+  /** Recent citizen stories, newest first (D-111). */
+  stories: readonly Story[];
+  /** The month's newspaper. */
+  newspaper: Newspaper;
+}
+
+/** An edition with the paper's name (the city's). */
+export interface Newspaper extends Edition {
+  readonly paper: string;
 }
 
 /** Day/night look: follow the clock, or stay in daylight or at night. */
@@ -207,6 +218,8 @@ export interface InspectInfo {
   station: StationInfo | null;
   /** Bus stations: riders a day, and buses out of its fleet. */
   busStation: { riders: number; out: number; fleet: number; reach: number } | null;
+  /** Homes: who lives there (up to three, D-111). */
+  residents: readonly Resident[] | null;
 }
 
 export interface StationInfo {

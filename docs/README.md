@@ -8,7 +8,7 @@ work session, read **Current Status** below, then the relevant spec.
 | | |
 |---|---|
 | **Current phase** | City evolution (specs/evolution.md): E0 stages ✅, E1 lifestyle ✅, E2 garbage ✅ |
-| **Next phase** | Engagement track (roadmap H): H1 goals ✅, then H2 incidents you can watch (E3), H3 citizen stories; server-run cities after (D-085) |
+| **Next phase** | Engagement track (roadmap H): H1 goals ✅, H3 citizen stories ✅, then H2 incidents you can watch (E3); server-run cities after (D-085) |
 | **Last updated** | 2026-11-21 |
 
 ## Run It

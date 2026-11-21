@@ -3,6 +3,7 @@ import type { Stage } from '../stages';
 import type { TechDef } from '../research';
 import type { BudgetReport } from '../systems/budget';
 import type { TileArea } from '../systems/growth';
+import type { Edition, Story } from '../stories/stories';
 
 /**
  * One simulation system (docs/02-architecture.md, "Simulation Systems", D-058). Each system
@@ -44,8 +45,12 @@ export interface DayOutcome {
   lifestyle: Lifestyle | null;
   /** A research project finished today (sim/research.ts). */
   research: TechDef | null;
+  /** Citizen stories told today (sim/stories, D-111). */
+  stories: Story[];
+  /** The newspaper, on the last day of a month. */
+  edition: Edition | null;
 }
 
 export function emptyOutcome(): DayOutcome {
-  return { changed: [], started: [], completed: [], abandoned: [], recovered: [], budget: null, stage: null, lifestyle: null, research: null };
+  return { changed: [], started: [], completed: [], abandoned: [], recovered: [], budget: null, stage: null, lifestyle: null, research: null, stories: [], edition: null };
 }
