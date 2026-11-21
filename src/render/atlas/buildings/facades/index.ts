@@ -1,10 +1,15 @@
 import type { Facade } from '../recipes';
+import { paintArches } from './arches';
+import { paintArtDeco } from './artdeco';
 import { paintBands } from './bands';
 import { paintCurtain } from './curtain';
+import { paintDiagrid } from './diagrid';
 import { paintGrid } from './grid';
 import { paintIndustrial } from './industrial';
 import type { FacadeArgs, FacadePainter } from './kit';
 import { paintLobby } from './lobby';
+import { paintLouvers } from './louvers';
+import { paintTimber } from './timber';
 import { paintTownhouse } from './townhouse';
 import { paintWindows } from './windows';
 
@@ -24,6 +29,11 @@ const FACADES: Readonly<Record<Facade, FacadePainter>> = {
   lobby: paintLobby,
   industrial: paintIndustrial,
   townhouse: paintTownhouse,
+  arch: paintArches,
+  diagrid: paintDiagrid,
+  louvers: paintLouvers,
+  artdeco: paintArtDeco,
+  timber: paintTimber,
 };
 
 /** Windows, doors and cladding on one camera-facing wall of a mass. */

@@ -744,7 +744,7 @@ export const BUILDINGS = {
 export type BuildingId = keyof typeof BUILDINGS;
 
 /** Colour variants each building is painted in (render/atlas/buildingArt.ts). */
-export const ART_VARIANTS = 6;
+export const ART_VARIANTS = 20;
 
 export const BUILDING_IDS = Object.keys(BUILDINGS) as BuildingId[];
 

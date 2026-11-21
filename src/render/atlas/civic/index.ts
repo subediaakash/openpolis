@@ -11,8 +11,8 @@ import { paintPark, PARK_VARIANTS } from './parks/park';
 import { paintTownHall } from './townHall';
 import { paintPowerPlant, powerPlantSmoke } from './utilities/powerPlant';
 import { paintLandfill } from './utilities/landfill';
-import { paintTrainStation } from './transport/trainStation';
-import { paintBusStation } from './transport/busStation';
+import { paintTrainStation, TRAIN_STATION_STYLES } from './transport/trainStation';
+import { BUS_STATION_STYLES, paintBusStation } from './transport/busStation';
 import { paintWaterTower } from './utilities/waterTower';
 
 /**
@@ -30,10 +30,9 @@ export const CIVIC_ART: Readonly<Record<CustomArtId, CivicArt>> = {
   power_plant: { variants: 3, headroom: () => 92, paint: paintPowerPlant, smoke: powerPlantSmoke },
   water_tower: { variants: 3, headroom: (v) => (v === 0 ? 62 : v === 1 ? 56 : 30), paint: paintWaterTower },
   landfill: { variants: 3, headroom: () => 34, paint: paintLandfill },
-  // Variant = the side its track runs along (set when placed), so the platform faces the rails.
-  train_station: { variants: 4, headroom: () => 58, paint: paintTrainStation },
-  // Variant = the side its street runs along, so the driveway turns off it.
-  bus_station: { variants: 4, headroom: () => 46, paint: paintBusStation },
+  // Variant = style * 4 + side (side = track/street edge 0..3, style = architectural design 0..2).
+  train_station: { variants: 4 * TRAIN_STATION_STYLES, headroom: () => 64, paint: paintTrainStation },
+  bus_station: { variants: 4 * BUS_STATION_STYLES, headroom: () => 52, paint: paintBusStation },
   ...ENERGY_ART,
   ...LANDMARK_ART,
   ...TOWER_ART,

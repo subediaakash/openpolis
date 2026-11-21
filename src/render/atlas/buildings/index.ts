@@ -53,6 +53,8 @@ function extrasAbove(art: BuildingArt, H: number): number {
   if (ex.has('spire')) up = Math.max(up, 37);
   if (ex.has('antenna')) up = Math.max(up, 23);
   if (ex.has('crown') || ex.has('watertank') || ex.has('hosetower')) up = Math.max(up, 22);
+  if (ex.has('billboard')) up = Math.max(up, 18);
+  if (ex.has('pergola') || ex.has('skylight')) up = Math.max(up, 10);
   if (ex.has('smokestack') || ex.has('smokestacks')) up = Math.max(up, 34);
   // Silos stand on the ground, so only the part above the walls needs room.
   if (ex.has('silo')) up = Math.max(up, 46 - H);

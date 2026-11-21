@@ -10,7 +10,7 @@ import type { Box } from '../../core';
  * *local* space: footprint w × h with the front at +v. buildings/index.ts paints them.
  */
 
-export type Roof = 'flat' | 'gable' | 'hip' | 'sawtooth';
+export type Roof = 'flat' | 'gable' | 'hip' | 'sawtooth' | 'mansard' | 'shed' | 'barrel';
 export type Facade =
   | 'punched'
   | 'brick'
@@ -22,7 +22,12 @@ export type Facade =
   | 'shopfront'
   | 'lobby'
   | 'industrial'
-  | 'townhouse';
+  | 'townhouse'
+  | 'arch'
+  | 'diagrid'
+  | 'louvers'
+  | 'artdeco'
+  | 'timber';
 export type Ground = 'garden' | 'paved' | 'parking' | 'plaza' | 'field';
 export type Extra =
   // ground level
@@ -48,6 +53,7 @@ export type Extra =
   | 'fireescape'
   | 'terraces'
   | 'redcross'
+  | 'bladesign'
   // on the roof
   | 'chimney'
   | 'watertank'
@@ -59,7 +65,10 @@ export type Extra =
   | 'solar'
   | 'roofgarden'
   | 'pool'
-  | 'hosetower';
+  | 'hosetower'
+  | 'skylight'
+  | 'pergola'
+  | 'billboard';
 
 /** One box of a building; masses stack, each sitting on the one below. */
 export interface Mass {

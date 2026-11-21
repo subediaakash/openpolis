@@ -18,4 +18,9 @@ export const factory: readonly BuildingArt[] = variants(
   { wall: '#8e9c8a', roofColor: '#5f6a5c', extras: ['smokestacks', 'loadingdock'] },
   { wall: '#b8a07e', roof: 'gable', roofH: 12, roofColor: '#6a6f75', extras: ['smokestack', 'tanks'] },
   { wall: '#a4aab2', roof: 'flat', roofColor: '#70757b', extras: ['silo', 'loadingdock', 'acunits'] },
+  // New architectural designs: barrel-vault assembly plant, clean-tech solar skylight plant, historic brick mill, shed-roof turbine works.
+  { wall: '#b8c0c8', roof: 'barrel', roofH: 11, roofColor: '#5c6874', extras: ['smokestacks', 'loadingdock'] },
+  { wall: '#d6dee4', roof: 'flat', roofColor: '#6d7782', extras: ['skylight', 'solar', 'loadingdock'] },
+  { wall: '#9e503e', facade: 'brick', roof: 'gable', roofH: 10, roofColor: '#4c5158', extras: ['smokestack', 'watertank', 'loadingdock'] },
+  { wall: '#b4bcb0', roof: 'shed', roofH: 9, roofColor: '#4c5952', extras: ['smokestack', 'silo', 'tanks'] },
 );

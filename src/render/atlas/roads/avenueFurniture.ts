@@ -3,13 +3,11 @@ import { paintRoundTree } from '../nature/trees';
 import { LAMP, onRoad, pole, POLE, type RoadAxis } from '../streetArt';
 
 /**
- * What stands on an avenue's median (docs/specs/transport.md): one modest tree per tile in a
- * grate (the city's own street-tree style), alternating with double-headed lamps and low
- * clipped hedges. Sprites in the objects layer, so they sort with cars and buildings.
+ * What stands on an avenue's median (docs/specs/transport.md): grated trees, double-headed lamps,
+ * clipped hedges, ornamental flowerbeds, tall accent trees and public-art plinths.
  */
 
-/** Straight-avenue layouts: 0 tree, 1 lamp between hedges, 2 tree and a hedge. */
-export const AVENUE_STYLES = 3;
+export const AVENUE_STYLES = 6;
 
 const TREE_SIZE = 0.5;
 
@@ -26,6 +24,22 @@ export function hedge(iso: IsoFrame, axis: RoadAxis, s0: number, s1: number, o: 
   const [u0, v0] = onRoad(axis, s0, o - w);
   const [u1, v1] = onRoad(axis, s1, o + w);
   iso.box(Math.min(u0, u1), Math.max(u0, u1), Math.min(v0, v1), Math.max(v0, v1), 0.3, h, '#4f9a3c', '#3c7d2e', '#6cbc4f');
+}
+
+/** Ornamental flowerbed planter along the median. */
+function flowerBed(iso: IsoFrame, axis: RoadAxis, s0: number, s1: number) {
+  const [u0, v0] = onRoad(axis, s0, -0.035);
+  const [u1, v1] = onRoad(axis, s1, 0.035);
+  iso.box(Math.min(u0, u1), Math.max(u0, u1), Math.min(v0, v1), Math.max(v0, v1), 0.2, 2, '#cbc4b7', '#9e978b', '#5b9646');
+  const blooms = ['#e85b6f', '#f4c842', '#f28c38', '#c26de6'];
+  for (let k = 0; k < 4; k++) {
+    const [u, v] = onRoad(axis, s0 + ((s1 - s0) * (k + 0.5)) / 4, 0);
+    const [x, y] = iso.p(u, v, 2.5);
+    iso.ctx.fillStyle = blooms[k];
+    iso.ctx.beginPath();
+    iso.ctx.arc(x, y, 1.3, 0, Math.PI * 2);
+    iso.ctx.fill();
+  }
 }
 
 /** A median lamp: one pole, two arms over both carriageways. */
@@ -61,8 +75,21 @@ export function paintAvenueFurniture(iso: IsoFrame, axis: RoadAxis, style: numbe
     hedge(iso, axis, 0.1, 0.38, 0);
     medianLamp(iso, axis, 0.5, 0.11);
     hedge(iso, axis, 0.62, 0.9, 0);
-  } else {
+  } else if (style === 2) {
     gratedTree(iso, ...onRoad(axis, 0.35, 0), 1);
     hedge(iso, axis, 0.6, 0.9, 0);
+  } else if (style === 3) {
+    flowerBed(iso, axis, 0.12, 0.88);
+  } else if (style === 4) {
+    gratedTree(iso, ...onRoad(axis, 0.24, 0), 2, 0.44);
+    medianLamp(iso, axis, 0.56, 0.11, 15);
+    gratedTree(iso, ...onRoad(axis, 0.82, 0), 3, 0.44);
+  } else {
+    // Public-art stone obelisk plinth flanked by clipped hedges.
+    hedge(iso, axis, 0.08, 0.34, 0);
+    const [u, v] = onRoad(axis, 0.5, 0);
+    iso.box(u - 0.04, u + 0.04, v - 0.04, v + 0.04, 0.2, 3.2, '#d9d3c7', '#aba498', '#ece7dc');
+    iso.box(u - 0.022, u + 0.022, v - 0.022, v + 0.022, 3.2, 11, '#58829e', '#3d5f78', '#78a5c4');
+    hedge(iso, axis, 0.66, 0.92, 0);
   }
 }

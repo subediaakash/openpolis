@@ -2,6 +2,7 @@ import type { Painting } from '../context';
 import type { Extra } from '../recipes';
 import { paintAntenna, paintCrown, paintSpire } from './crowns';
 import { paintHoseTower, paintHvac, paintWaterTank } from './equipment';
+import { paintBillboard, paintPergola, paintSkylight } from './features';
 import type { RooftopPainter } from './kit';
 import { paintHelipad, paintPool, paintRoofGarden, paintSolar } from './leisure';
 
@@ -10,10 +11,13 @@ const ROOFTOP: readonly (readonly [Extra, RooftopPainter])[] = [
   ['solar', paintSolar],
   ['roofgarden', paintRoofGarden],
   ['pool', paintPool],
+  ['pergola', paintPergola],
+  ['skylight', paintSkylight],
   ['acunits', paintHvac],
   ['helipad', paintHelipad],
   ['watertank', paintWaterTank],
   ['hosetower', paintHoseTower],
+  ['billboard', paintBillboard],
   ['crown', paintCrown],
   ['antenna', paintAntenna],
   ['spire', paintSpire],

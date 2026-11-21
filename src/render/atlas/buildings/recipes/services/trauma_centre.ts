@@ -31,4 +31,25 @@ export const traumaCentre: readonly BuildingArt[] = variants(
     ground: 'parking',
     extras: ['redcross', 'helipad', 'solar'],
   },
+  {
+    wall: '#dce8f0',
+    facade: 'curtain',
+    fins: true,
+    masses: [
+      { floors: 2, box: { u0: 0.14, u1: 2.86, v0: 0.14, v1: 2.45 }, facade: 'lobby' },
+      { floors: 5, box: { u0: 0.45, u1: 2.55, v0: 0.3, v1: 1.85 } },
+    ],
+    extras: ['canopy', 'redcross', 'helipad', 'skylight'],
+    trees: 3,
+  },
+  {
+    wall: '#f2ebe2',
+    facade: 'grid',
+    masses: [
+      { floors: 2, box: { u0: 0.12, u1: 2.88, v0: 0.12, v1: 2.5 }, facade: 'lobby' },
+      { floors: 4, box: { u0: 0.55, u1: 2.45, v0: 0.28, v1: 1.8 } },
+    ],
+    extras: ['canopy', 'redcross', 'helipad', 'roofgarden'],
+    trees: 3,
+  },
 );

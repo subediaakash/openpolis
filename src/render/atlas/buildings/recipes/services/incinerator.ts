@@ -20,4 +20,6 @@ export const incinerator: readonly BuildingArt[] = variants(
   },
   {},
   { wall: '#b2643f', facade: 'brick', extras: ['smokestacks', 'loadingdock'] },
+  { wall: '#7c8690', roof: 'sawtooth', roofH: 7, roofColor: '#4a5058', extras: ['smokestack', 'silo', 'loadingdock'] },
+  { wall: '#9a9e96', roof: 'barrel', roofH: 8, roofColor: '#525854', extras: ['smokestacks', 'tanks', 'loadingdock'] },
 );

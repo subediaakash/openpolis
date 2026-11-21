@@ -430,9 +430,9 @@ export class ChunkRenderer {
       // Overbridges need dry land at both ends.
       const [sx, sy] = axis === 'u' ? [0, 1] : [1, 0];
       const dry = (tx: number, ty: number) => w.inBounds(tx, ty) && !isWaterTerrain(w.terrain[w.index(tx, ty)] as TerrainId);
-      if (k === 0 && dry(x - sx, y - sy) && dry(x + sx, y + sy)) return f.overbridge[axis];
-      if (k === 4) return f.gantry[axis];
-      return k % 2 === 1 ? f.highwayLamp[axis] : null;
+      if (k === 0 && dry(x - sx, y - sy) && dry(x + sx, y + sy)) return f.overbridge[axis][hash % f.overbridge[axis].length];
+      if (k === 4) return f.gantry[axis][hash % f.gantry[axis].length];
+      return k % 2 === 1 ? f.highwayLamp[axis][hash % f.highwayLamp[axis].length] : null;
     }
     if (w.road[i] === RoadType.Avenue) {
       // Avenues: median trees and lamps on straights; nothing in junctions (the crossings stay clear).
@@ -448,7 +448,7 @@ export class ChunkRenderer {
     }
     if (w.road[i] === RoadType.Ramp) return null;
     if (straight) {
-      const style = hash % 5;
+      const style = hash % (f.street[axis].length + 2);
       return style < f.street[axis].length ? f.street[axis][style] : null;
     }
     const t = f.cornerLamp[mask];

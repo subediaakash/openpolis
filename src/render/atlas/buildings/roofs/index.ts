@@ -1,9 +1,12 @@
 import type { Roof } from '../recipes';
+import { paintBarrelRoof } from './barrel';
 import { paintFlatRoof } from './flat';
 import { paintGableRoof } from './gable';
 import { paintHipRoof } from './hip';
 import type { RoofArgs, RoofPainter } from './kit';
+import { paintMansardRoof } from './mansard';
 import { paintSawtoothRoof } from './sawtooth';
+import { paintShedRoof } from './shed';
 
 export type { RoofArgs } from './kit';
 
@@ -12,6 +15,9 @@ const ROOFS: Readonly<Record<Roof, RoofPainter>> = {
   gable: paintGableRoof,
   hip: paintHipRoof,
   sawtooth: paintSawtoothRoof,
+  mansard: paintMansardRoof,
+  shed: paintShedRoof,
+  barrel: paintBarrelRoof,
 };
 
 /** The top mass's roof, in view space; pitched and sawtooth roofs run along `axis`. */

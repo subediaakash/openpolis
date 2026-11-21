@@ -17,4 +17,6 @@ export const recyclingCentre: readonly BuildingArt[] = variants(
   },
   {},
   { wall: '#4f86a8', roofColor: '#365c73', signColor: '#2d8fd8', extras: ['loadingdock', 'crates', 'tanks'] },
+  { wall: '#c4d2c6', roof: 'barrel', roofH: 9, roofColor: '#3e6e4a', signColor: '#2c8a4a', extras: ['loadingdock', 'crates'] },
+  { wall: '#d8d4c8', roof: 'shed', roofH: 8, roofColor: '#486054', signColor: '#2f8a68', extras: ['loadingdock', 'silo', 'crates'] },
 );

@@ -22,4 +22,6 @@ export const researchCentre: readonly BuildingArt[] = variants(
   },
   {},
   { wall: '#f1ece2', glass: '#9ad0b8', facade: 'ribbon', extras: ['crown', 'solar'], signColor: '#2f9e6b' },
+  { wall: '#d4e4f0', glass: '#68b2e2', facade: 'curtain', roof: 'barrel', roofH: 10, roofColor: '#48647c', signColor: '#1f6fb2', extras: ['planters'] },
+  { wall: '#e2dce8', glass: '#8aa8d8', facade: 'grid', extras: ['skylight', 'pergola', 'antenna'], signColor: '#6d44a8' },
 );

@@ -69,7 +69,38 @@ const stack: Design = (iso, o) => {
   crownSign(iso, o, [0.95, 0.9], 166, 'SUITES', '#7ff0e0');
 };
 
-const DESIGNS: readonly Design[] = [crescent, blade, stack];
+/** Stepped limestone Art Deco grand hotel with warm glowing crown. */
+const decoHotel: Design = (iso, o) => {
+  planShadow(iso, o, C, rect(0.72, 0.72), 168, LOT(o));
+  const skin = bands({ wall: '#ece2cf', tint: '#38526a', floorH: 7, glazed: 0.56 });
+  prism(iso, o, C, rect(0.74, 0.7), 0, 68, skin, '#dfd4be');
+  prism(iso, o, C, rect(0.58, 0.54), 68, 128, skin, '#dfd4be');
+  prism(iso, o, C, rect(0.42, 0.4), 128, 166, skin, '#e8dec8');
+  lightRing(iso, o, C, rect(0.42, 0.4), 164, '#ffe5a8');
+  crownSign(iso, o, C, 166, 'PLAZA', '#ffd27a');
+};
+
+/** Curved blue-glass resort tower rising above a landscaped pool deck. */
+const resort: Design = (iso, o) => {
+  const H = 162;
+  planShadow(iso, o, C, rect(0.72, 0.64), H, LOT(o));
+  prism(iso, o, C, superellipse(0.8, 0.76, 6, 24), 0, 12, glass({ tint: '#2d5870', floorH: 12, mullion: 0.12 }), '#78bf62');
+  prism(iso, o, [1, 0.92], superellipse(0.56, 0.44, 3, 28), 12, H, glass({ tint: '#4688a8', frame: '#e8f4fa', floorH: 6.5, mullion: 0.1 }), '#dce8f0');
+  lightRing(iso, o, [1, 0.92], superellipse(0.54, 0.42, 3, 28), H - 1.5, '#b8f0ff');
+  crownSign(iso, o, [1, 0.92], H, 'PALACE', '#88e0ff');
+};
+
+/** Emerald-glass tapered luxury hotel with rooftop sky lounge. */
+const crownHotel: Design = (iso, o) => {
+  const H = 170;
+  planShadow(iso, o, C, rect(0.68, 0.62), H, LOT(o));
+  const skin = glass({ tint: '#367a6e', frame: '#e2f4ee', floorH: 6.5, mullion: 0.1 });
+  loft(iso, o, sweep(0, H, 12, C, (t) => superellipse(0.68 - t * 0.2, 0.52 - t * 0.12, 6, 24)), skin, '#dceee8');
+  lightRing(iso, o, C, superellipse(0.48, 0.4, 6, 24), H - 1.5, '#a8ffe0');
+  crownSign(iso, o, C, H, 'CROWN', '#7ff0c8');
+};
+
+const DESIGNS: readonly Design[] = [crescent, blade, stack, decoHotel, resort, crownHotel];
 export const HOTEL_VARIANTS = DESIGNS.length;
 export const HOTEL_TOP = 196;
 

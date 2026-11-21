@@ -72,7 +72,8 @@ export class AgentRenderer {
           s.texture = this.tex.people[a.variant % this.tex.people.length][Math.floor(a.age / STEP_TIME) % 2];
           s.anchor.set(0.5, 1);
         } else {
-          s.texture = this.tex.vehicles[a.kind][a.variant % 6][vt.dir(pose.dir)];
+          const variants = this.tex.vehicles[a.kind];
+          s.texture = variants[a.variant % variants.length][vt.dir(pose.dir)];
           s.anchor.set(0.5, VEHICLE_ANCHOR_Y);
         }
         s.position.set(p.x, p.y - (onDeck ? DECK_LIFT : 0));
@@ -102,7 +103,8 @@ export class AgentRenderer {
       // On an overpass the car rides the deck: lifted, and drawn over it.
       const layer = c.raised ? this.raised : this.container;
       if (s.parent !== layer) layer.addChild(s);
-      s.texture = this.tex.trains[c.part][vt.dir(c.dir)];
+      const trainVariants = this.tex.trains[c.part];
+      s.texture = trainVariants[c.variant % trainVariants.length][vt.dir(c.dir)];
       s.position.set(p.x, p.y - (c.raised ? OVERPASS_LIFT : 0));
       s.zIndex = vp.x + vp.y;
       s.visible = true;
@@ -164,7 +166,8 @@ export class AgentRenderer {
         this.container.addChild(s);
       }
       used++;
-      s.texture = this.tex.busStops[side];
+      const stopStyle = this.tex.busStops[stop.tile % this.tex.busStops.length];
+      s.texture = stopStyle[side];
       s.position.set(p.x, p.y);
       // Depth of the shelter's spot: tile centre pushed toward its side.
       const push = [

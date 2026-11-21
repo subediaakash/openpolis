@@ -30,6 +30,7 @@ import {
   VEHICLE_VARIANTS,
   paintRailCar,
   RAIL_CAR_PARTS,
+  TRAIN_VARIANTS,
   type RailCarPart,
 } from './agentArt';
 import type { AgentKind } from '../../sim/systems/traffic';
@@ -47,10 +48,13 @@ import {
   type MaskShape,
 } from './transitionArt';
 import { paintTreeCluster, TREE_VARIANTS } from './nature/trees';
-import { paintBusStop, STOP_FRAME_H, STOP_FRAME_W } from './stopArt';
+import { paintBusStop, STOP_FRAME_H, STOP_FRAME_W, STOP_STYLES } from './stopArt';
 import {
   FURNITURE_FRAME_H,
   FURNITURE_FRAME_W,
+  GANTRY_STYLES,
+  HIGHWAY_LAMP_STYLES,
+  OVERBRIDGE_STYLES,
   paintFurniture,
   ROAD_AXES,
   STREET_STYLES,
@@ -115,12 +119,12 @@ export interface TerrainTextures {
   ambient: AmbientTextures;
   /** Vehicles, indexed by kind, then variant, then direction (0 NE, 1 SE, 2 SW, 3 NW). */
   vehicles: Readonly<Record<Exclude<AgentKind, 'person'>, Texture[][]>>;
-  /** Trains: locomotive and carriage, by direction (render/atlas/agentArt.ts paintRailCar). */
-  trains: Readonly<Record<RailCarPart, Texture[]>>;
+  /** Trains: locomotive and carriage, indexed [part][variant][dir] (render/atlas/agentArt.ts paintRailCar). */
+  trains: Readonly<Record<RailCarPart, Texture[][]>>;
   /** Pedestrians, indexed by variant then walk frame (0/1). */
   people: Texture[][];
-  /** Bus stop shelters, indexed by view side (0 −y, 1 +x, 2 +y, 3 −x). */
-  busStops: Texture[];
+  /** Bus stop shelters, indexed [style][view side (0 −y, 1 +x, 2 +y, 3 −x)]. */
+  busStops: Texture[][];
   /** Warning badges: no road access, no power, no water. */
   warnRoad: Texture;
   warnPower: Texture;
@@ -149,9 +153,9 @@ export interface StreetFurniture {
   street: Readonly<Record<RoadAxis, readonly Texture[]>>;
   /** A lamp on the outside of a bend, indexed by mask. */
   cornerLamp: readonly Texture[];
-  highwayLamp: Readonly<Record<RoadAxis, Texture>>;
-  gantry: Readonly<Record<RoadAxis, Texture>>;
-  overbridge: Readonly<Record<RoadAxis, Texture>>;
+  highwayLamp: Readonly<Record<RoadAxis, readonly Texture[]>>;
+  gantry: Readonly<Record<RoadAxis, readonly Texture[]>>;
+  overbridge: Readonly<Record<RoadAxis, readonly Texture[]>>;
   /** Straight avenues, indexed by axis then style (roads/avenueFurniture.ts). */
   avenue: Readonly<Record<RoadAxis, readonly Texture[]>>;
   /** One-way carriageways, indexed by travel direction then style (roads/wideFurniture.ts). */
@@ -169,9 +173,9 @@ function furniturePieces(): [string, FurniturePiece][] {
   const out: [string, FurniturePiece][] = [];
   for (const axis of ROAD_AXES) {
     for (let style = 0; style < STREET_STYLES; style++) out.push([`furn_street_${axis}_${style}`, { kind: 'street', axis, style }]);
-    out.push([`furn_hwlamp_${axis}`, { kind: 'highwayLamp', axis }]);
-    out.push([`furn_gantry_${axis}`, { kind: 'gantry', axis }]);
-    out.push([`furn_overbridge_${axis}`, { kind: 'overbridge', axis }]);
+    for (let style = 0; style < HIGHWAY_LAMP_STYLES; style++) out.push([`furn_hwlamp_${axis}_${style}`, { kind: 'highwayLamp', axis, style }]);
+    for (let style = 0; style < GANTRY_STYLES; style++) out.push([`furn_gantry_${axis}_${style}`, { kind: 'gantry', axis, style }]);
+    for (let style = 0; style < OVERBRIDGE_STYLES; style++) out.push([`furn_overbridge_${axis}_${style}`, { kind: 'overbridge', axis, style }]);
     for (let style = 0; style < AVENUE_STYLES; style++) out.push([`furn_avenue_${axis}_${style}`, { kind: 'avenue', axis, style }]);
     for (let style = 0; style < PEDESTRIAN_STYLES; style++) out.push([`furn_ped_${axis}_${style}`, { kind: 'pedestrian', axis, style }]);
   }
@@ -423,11 +427,17 @@ export function buildTerrainTextures(rotation: BuildingRotation = 0): TerrainTex
       for (let d = 0; d < 4; d++) b.add(`veh_${k}_${v}_${d}`, W, VEHICLE_FRAME_H, (ctx) => paintVehicle(ctx, k, v, d));
     }
   }
-  for (const part of RAIL_CAR_PARTS) for (let d = 0; d < 4; d++) b.add(`train_${part}_${d}`, W, VEHICLE_FRAME_H, (ctx) => paintRailCar(ctx, part, d));
+  for (const part of RAIL_CAR_PARTS) {
+    for (let v = 0; v < TRAIN_VARIANTS; v++) {
+      for (let d = 0; d < 4; d++) b.add(`train_${part}_${v}_${d}`, W, VEHICLE_FRAME_H, (ctx) => paintRailCar(ctx, part, d, v));
+    }
+  }
   for (let v = 0; v < PERSON_VARIANTS; v++) {
     for (let f = 0; f < 2; f++) b.add(`person_${v}_${f}`, PERSON_W, PERSON_H, (ctx) => paintPerson(ctx, v, f));
   }
-  for (const side of [0, 1, 2, 3] as const) b.add(`stop_${side}`, STOP_FRAME_W, STOP_FRAME_H, (ctx) => paintBusStop(ctx, side));
+  for (let style = 0; style < STOP_STYLES; style++) {
+    for (const side of [0, 1, 2, 3] as const) b.add(`stop_${style}_${side}`, STOP_FRAME_W, STOP_FRAME_H, (ctx) => paintBusStop(ctx, side, style));
+  }
   b.add('warn_road', 18, 20, paintWarnRoad);
   b.add('warn_power', 18, 20, paintWarnPower);
   b.add('warn_water', 18, 20, paintWarnWater);
@@ -481,9 +491,9 @@ export function buildTerrainTextures(rotation: BuildingRotation = 0): TerrainTex
     furniture: {
       street: { u: range(STREET_STYLES, (k) => get(`furn_street_u_${k}`)), v: range(STREET_STYLES, (k) => get(`furn_street_v_${k}`)) },
       cornerLamp: range(16, (m) => (isBend(m) ? get(`furn_corner_${m}`) : Texture.EMPTY)),
-      highwayLamp: { u: get('furn_hwlamp_u'), v: get('furn_hwlamp_v') },
-      gantry: { u: get('furn_gantry_u'), v: get('furn_gantry_v') },
-      overbridge: { u: get('furn_overbridge_u'), v: get('furn_overbridge_v') },
+      highwayLamp: { u: range(HIGHWAY_LAMP_STYLES, (k) => get(`furn_hwlamp_u_${k}`)), v: range(HIGHWAY_LAMP_STYLES, (k) => get(`furn_hwlamp_v_${k}`)) },
+      gantry: { u: range(GANTRY_STYLES, (k) => get(`furn_gantry_u_${k}`)), v: range(GANTRY_STYLES, (k) => get(`furn_gantry_v_${k}`)) },
+      overbridge: { u: range(OVERBRIDGE_STYLES, (k) => get(`furn_overbridge_u_${k}`)), v: range(OVERBRIDGE_STYLES, (k) => get(`furn_overbridge_v_${k}`)) },
       avenue: { u: range(AVENUE_STYLES, (k) => get(`furn_avenue_u_${k}`)), v: range(AVENUE_STYLES, (k) => get(`furn_avenue_v_${k}`)) },
       boulevard: range(4, (d) => range(WIDE_STYLES, (k) => get(`furn_blvd_${d}_${k}`))),
       expressway: range(4, (d) => range(WIDE_STYLES, (k) => get(`furn_xway_${d}_${k}`))),
@@ -497,8 +507,11 @@ export function buildTerrainTextures(rotation: BuildingRotation = 0): TerrainTex
       VEHICLE_KINDS.map((k) => [k, range(VEHICLE_VARIANTS, (v) => range(4, (d) => get(`veh_${k}_${v}_${d}`)))]),
     ) as Record<Exclude<AgentKind, 'person'>, Texture[][]>,
     people: range(PERSON_VARIANTS, (v) => range(2, (f) => get(`person_${v}_${f}`))),
-    trains: { engine: range(4, (d) => get(`train_engine_${d}`)), carriage: range(4, (d) => get(`train_carriage_${d}`)) },
-    busStops: range(4, (side) => get(`stop_${side}`)),
+    trains: {
+      engine: range(TRAIN_VARIANTS, (v) => range(4, (d) => get(`train_engine_${v}_${d}`))),
+      carriage: range(TRAIN_VARIANTS, (v) => range(4, (d) => get(`train_carriage_${v}_${d}`))),
+    },
+    busStops: range(STOP_STYLES, (style) => range(4, (side) => get(`stop_${style}_${side}`))),
     warnRoad: get('warn_road'),
     rail: {
       track: range(16, (m) => get(`rail_track_${m}`)),

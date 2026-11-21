@@ -67,7 +67,43 @@ const twins: Design = (iso, o) => {
   prism(iso, o, near, circle(0.36, 24), 0, H, skin, '#e6ded0');
 };
 
-const DESIGNS: readonly Design[] = [waves, jenga, twins];
+/** Cascading biophilic green-terrace tower stepping back as it rises. */
+const terraced: Design = (iso, o) => {
+  planShadow(iso, o, C, rect(0.7, 0.7), 166, LOT(o));
+  const skin = bands({ wall: '#f2eee4', tint: '#46748e', floorH: 7.5, glazed: 0.66 });
+  const tiers: readonly [number, number, number, number][] = [
+    [0, 48, 0.72, 0.68],
+    [48, 96, 0.6, 0.56],
+    [96, 138, 0.48, 0.44],
+    [138, 166, 0.36, 0.34],
+  ];
+  for (const [z0, z1, rx, ry] of tiers) prism(iso, o, C, superellipse(rx, ry, 6, 24), z0, z1, skin, '#6eb85c');
+};
+
+/** Clustered triple cylindrical glass-and-limestone residential towers. */
+const cylinders: Design = (iso, o) => {
+  planShadow(iso, o, C, circle(0.72), 162, LOT(o));
+  const skin = bands({ wall: '#ede6d8', tint: '#4e7894', floorH: 7, glazed: 0.64 });
+  const cols: readonly [Pt, number, number][] = [
+    [[0.64, 0.72], 0.34, 162],
+    [[1.36, 0.84], 0.32, 134],
+    [[0.96, 1.38], 0.34, 110],
+  ];
+  const sorted = [...cols].sort((a, b) => at(o, a[0][0], a[0][1]).depth - at(o, b[0][0], b[0][1]).depth);
+  for (const [pt, rad, h] of sorted) prism(iso, o, pt, circle(rad, 24), 0, h, skin, '#72b862');
+};
+
+/** Bronze-glass octagonal residential tower with rooftop infinity pool deck. */
+const bronzePool: Design = (iso, o) => {
+  const H = 158;
+  planShadow(iso, o, C, rect(0.62, 0.62), H, LOT(o));
+  const skin = glass({ tint: '#7d6c54', frame: '#f2e8d8', floorH: 7, mullion: 0.1 });
+  prism(iso, o, C, superellipse(0.68, 0.68, 6, 24), 0, 12, bands({ wall: '#e8dfd0', tint: '#3d586c', floorH: 12, glazed: 0.7 }), '#dcd3c2');
+  prism(iso, o, C, superellipse(0.54, 0.54, 4, 24), 12, H, skin, '#e6ded0');
+  prism(iso, o, C, superellipse(0.36, 0.32, 4, 20), H, H + 2.5, solid('#f0ece4'), '#47c4e8');
+};
+
+const DESIGNS: readonly Design[] = [waves, jenga, twins, terraced, cylinders, bronzePool];
 export const CONDO_TOWER_VARIANTS = DESIGNS.length;
 export const CONDO_TOWER_TOP = 180;
 

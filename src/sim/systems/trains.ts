@@ -25,6 +25,8 @@ export interface RailCarPose {
   readonly part: 'engine' | 'carriage';
   /** On an overpass deck over a road: drawn raised, above the deck. */
   readonly raised: boolean;
+  /** Livery variant for this train. */
+  readonly variant: number;
 }
 
 export const TRAINS = {
@@ -230,7 +232,8 @@ export class TrainSystem implements SimSystem {
   poses(): RailCarPose[] {
     const w = this.world;
     const out: RailCarPose[] = [];
-    for (const t of this.trains) {
+    for (let ti = 0; ti < this.trains.length; ti++) {
+      const t = this.trains[ti];
       const line = this.lines[t.line];
       const last = line.path.length - 1;
       for (let k = 0; k <= TRAINS.carriages; k++) {
@@ -247,7 +250,7 @@ export class TrainSystem implements SimSystem {
         t.dirs[k] = dir;
         const tile = w.index(Math.floor(p.x), Math.floor(p.y));
         // Push-pull: a driving cab at both ends, so it simply changes ends at a terminus.
-        out.push({ x, y, dir, part: k === 0 || k === TRAINS.carriages ? 'engine' : 'carriage', raised: w.road[tile] !== RoadType.None });
+        out.push({ x, y, dir, part: k === 0 || k === TRAINS.carriages ? 'engine' : 'carriage', raised: w.road[tile] !== RoadType.None, variant: ti });
       }
     }
     return out;

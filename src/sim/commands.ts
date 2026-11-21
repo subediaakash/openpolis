@@ -418,15 +418,15 @@ export function applyPlace(city: City, plan: PlacePlan, variant: number): ApplyR
     // Placed buildings never sit on a zone (only grown ones do).
     w.zone[i] = ZoneType.None;
   }
-  // Stations face what they serve: a train station its track, a bus station its street (its
-  // driveway turns off there). The side is the art variant.
+  // Stations face what they serve: side (0..3) in the low bits, architectural style (0..2) above.
   const pd = buildingDef(plan.building);
   const side = pd.railStation
     ? trackSide(w, plan.origin.x, plan.origin.y, size.w, size.h)
     : pd.busStation
       ? roadSide(w, plan.origin.x, plan.origin.y, size.w, size.h)
       : -1;
-  w.addBuilding({ def: plan.building, x: plan.origin.x, y: plan.origin.y, variant: side >= 0 ? side : variant }, size.w, size.h);
+  const placedVariant = side >= 0 ? side + (Math.max(0, variant) % 3) * 4 : variant;
+  w.addBuilding({ def: plan.building, x: plan.origin.x, y: plan.origin.y, variant: placedVariant }, size.w, size.h);
   city.funds -= plan.cost;
   return { ok: true, changed: bounds(plan.tiles), tiles: plan.tiles };
 }

@@ -1,25 +1,50 @@
 import { faceRef, flatTone, pOn, shade, wallOn, type FaceRef } from '../../core';
 import type { AttachArgs } from './kit';
 
-/** Striped awning over the shopfront, sloping out, with a scalloped valance and its shadow. */
+/** Awning over the shopfront: striped French awning, solid architectural matte canopy, or cantilevered glass/metal visor. */
 export function paintAwning({ p, lf }: AttachArgs) {
   if (!lf) return;
-  const { iso, art } = p;
+  const { iso, art, rng } = p;
   const c = art.awning ?? '#d94a3d';
   const z = art.floorH - 1.5;
-  const stripes = 8;
   const len = lf.a1 - lf.a0;
-  wallOn(iso, lf, lf.a0, lf.a1, z - 6, z - 4, 'rgba(12, 18, 30, 0.22)');
+  const style = Math.floor(rng() * 3);
+  wallOn(iso, lf, lf.a0, lf.a1, z - 5.8, z - 3.8, 'rgba(12, 18, 30, 0.22)');
+
+  if (style === 1) {
+    // Sleek flat cantilevered architectural canopy with contrasting fascia trim.
+    const top = flatTone(shade(c, 0.08), lf.face);
+    iso.poly([pOn(iso, lf, lf.a0, 0, z), pOn(iso, lf, lf.a1, 0, z), pOn(iso, lf, lf.a1, 0.16, z - 1.2), pOn(iso, lf, lf.a0, 0.16, z - 1.2)], top);
+    wallOn(iso, lf, lf.a0, lf.a1, z - 2.6, z - 1.2, flatTone(shade(c, -0.22), lf.face), 0.16);
+    wallOn(iso, lf, lf.a0, lf.a1, z - 1.6, z - 1.2, 'rgba(255,255,255,0.45)', 0.16);
+    return;
+  }
+
+  const stripes = style === 2 ? 1 : 8;
   for (let k = 0; k < stripes; k++) {
     const a = lf.a0 + (len / stripes) * k;
     const a2 = a + len / stripes;
-    const fill = k % 2 ? '#f8f4ec' : c;
+    const fill = stripes === 1 ? c : k % 2 ? '#f8f4ec' : c;
     const g = iso.ctx.createLinearGradient(...pOn(iso, lf, a, 0, z), ...pOn(iso, lf, a, 0.16, z - 4));
     g.addColorStop(0, shade(flatTone(fill, lf.face), -0.12));
     g.addColorStop(1, shade(flatTone(fill, lf.face), 0.1));
     iso.poly([pOn(iso, lf, a, 0, z), pOn(iso, lf, a2, 0, z), pOn(iso, lf, a2, 0.16, z - 4), pOn(iso, lf, a, 0.16, z - 4)], g);
   }
   wallOn(iso, lf, lf.a0, lf.a1, z - 5.5, z - 4, flatTone(shade(c, -0.15), lf.face), 0.16);
+}
+
+/** Perpendicular projecting blade sign hanging off a shop or café front corner. */
+export function paintBladeSign({ p, lf }: AttachArgs) {
+  if (!lf) return;
+  const { iso, art } = p;
+  const c = art.signColor ?? art.awning ?? '#d94a3d';
+  const a = lf.a1 - 0.05;
+  const z0 = art.floorH + 0.5;
+  const z1 = z0 + 7;
+  // Bracket arms + projecting vertical sign plate.
+  iso.poly([pOn(iso, lf, a, 0, z1 - 0.5), pOn(iso, lf, a, 0.16, z1 - 0.5), pOn(iso, lf, a, 0.16, z1), pOn(iso, lf, a, 0, z1)], '#343a42');
+  iso.poly([pOn(iso, lf, a, 0.03, z0), pOn(iso, lf, a, 0.15, z0), pOn(iso, lf, a, 0.15, z1 - 0.6), pOn(iso, lf, a, 0.03, z1 - 0.6)], flatTone(c, lf.face));
+  iso.poly([pOn(iso, lf, a, 0.06, z0 + 1.4), pOn(iso, lf, a, 0.12, z0 + 1.4), pOn(iso, lf, a, 0.12, z1 - 2), pOn(iso, lf, a, 0.06, z1 - 2)], 'rgba(255,255,255,0.75)');
 }
 
 /** A sign board with a lit top edge and text. */

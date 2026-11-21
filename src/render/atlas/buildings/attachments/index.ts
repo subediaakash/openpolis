@@ -4,7 +4,7 @@ import { paintBalconies, paintFireEscape, paintTerraces } from './balconies';
 import { paintFireDoors, paintGarageDoor, paintLoadingDock } from './doors';
 import { paintCanopy, paintChimney, paintPorch } from './entrances';
 import { attachArgs, type AttachPainter } from './kit';
-import { paintAwning, paintRedCross, paintRoofSign, paintShopSign } from './signage';
+import { paintAwning, paintBladeSign, paintRedCross, paintRoofSign, paintShopSign } from './signage';
 
 /** Wall and front extras, in drawing order. */
 const ON_WALLS: readonly (readonly [Extra, AttachPainter])[] = [
@@ -12,6 +12,7 @@ const ON_WALLS: readonly (readonly [Extra, AttachPainter])[] = [
   ['porch', paintPorch],
   ['firedoors', paintFireDoors],
   ['awning', paintAwning],
+  ['bladesign', paintBladeSign],
   ['balconies', paintBalconies],
   ['fireescape', paintFireEscape],
   ['terraces', paintTerraces],
