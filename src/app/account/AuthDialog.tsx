@@ -1,6 +1,7 @@
 import { useAtom, useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../save/api';
+import { AUTH_HANDOFF_EVENT } from '../../save/CitySaver';
 import { API_LIMITS } from '../../shared/api';
 import { authDialogAtom, authNoticeAtom, authProvidersAtom } from '../atoms';
 import { useAuth } from '../auth';
@@ -46,6 +47,8 @@ export function GithubMark() {
 
 /** Leave for GitHub's sign-in page; the server sends the player back to where they were. */
 export function signInWithGithub() {
+  // The open city is kept for the trip, even if a guest's saving is paused (D-102).
+  window.dispatchEvent(new Event(AUTH_HANDOFF_EVENT));
   const returnTo = location.pathname + location.search;
   location.href = `/api/auth/github?returnTo=${encodeURIComponent(returnTo)}`;
 }

@@ -1,6 +1,4 @@
-import { useAtomValue } from 'jotai';
 import { useState, type ReactNode } from 'react';
-import { toolPreviewAtom } from '../atoms';
 import { SMALL_UI, useMedia } from '../mobile/useMedia';
 
 export interface PickerFold {
@@ -8,8 +6,6 @@ export interface PickerFold {
   readonly small: boolean;
   /** Folded to a chip showing the choice. */
   readonly folded: boolean;
-  /** A finished touch drag waits for Build or Cancel: the picker steps aside entirely. */
-  readonly drafting: boolean;
   /** Something was chosen: on phones, fold so the map is free to place it. */
   chosen: () => void;
   unfold: () => void;
@@ -17,18 +13,16 @@ export interface PickerFold {
 
 /**
  * Phones (D-097): a picker is for choosing, the map is for placing. Once the player picks a
- * building or road type the picker folds into a chip ("Park $100 · Change"), and while a drag
- * waits for Build / Cancel it hides. Mount the hook inside a component that mounts when its tool
+ * building or road type the picker folds into a chip ("Park $100 · Change · ✕"); ✕ puts the
+ * tool away and closes it (D-100). Mount the hook inside a component that mounts when its tool
  * is picked, so every visit starts unfolded.
  */
 export function usePickerFold(): PickerFold {
   const small = useMedia(SMALL_UI);
-  const drafting = useAtomValue(toolPreviewAtom)?.awaitingConfirm ?? false;
   const [folded, setFolded] = useState(false);
   return {
     small,
     folded: small && folded,
-    drafting: small && drafting,
     chosen: () => setFolded(true),
     unfold: () => setFolded(false),
   };
@@ -41,10 +35,12 @@ interface PickerChipProps {
   name: string;
   cost: string;
   onChange: () => void;
+  /** Stop placing: back to Select, picker closed. */
+  onClose: () => void;
 }
 
 /** The folded picker: what's chosen, its price, and a button to choose again. */
-export function PickerChip({ kind, picture, name, cost, onChange }: PickerChipProps) {
+export function PickerChip({ kind, picture, name, cost, onChange, onClose }: PickerChipProps) {
   return (
     <div className={`panel ${kind} is-chip`} role="status" aria-label={`Placing ${name}`}>
       <span className="chip-picture" aria-hidden="true">
@@ -56,6 +52,21 @@ export function PickerChip({ kind, picture, name, cost, onChange }: PickerChipPr
       </span>
       <button type="button" className="chip-change" onClick={onChange}>
         Change
+      </button>
+      <button
+        type="button"
+        className="chip-close"
+        aria-label={`Stop placing ${name}`}
+        onClick={onClose}
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path
+            d="M4 4l8 8M12 4l-8 8"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
       </button>
     </div>
   );

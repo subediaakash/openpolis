@@ -47,6 +47,8 @@ export interface GameEventMap {
   budget: BudgetInfo;
   /** Building shown in the info panel, or null when it's closed. */
   inspect: InspectInfo | null;
+  /** A touch action that can still be undone, or null once it can't (D-100). */
+  undo: UndoOffer | null;
 }
 
 /** Day/night look: follow the clock, or stay in daylight or at night. */
@@ -190,8 +192,16 @@ export interface ToolPreviewInfo {
   affordable: boolean;
   /** Extra warning under the cost (e.g. zone tiles that no road reaches). */
   note: string | null;
-  /** A finished touch drag waiting for Build or Cancel (D-080). */
-  awaitingConfirm: boolean;
+}
+
+/** The last touch action, which the Undo bar can take back (D-100). */
+export interface UndoOffer {
+  /** Changes with every new action, so the bar restarts its timer. */
+  readonly id: number;
+  /** What was done, e.g. "Road built" or "Clinic placed". */
+  readonly label: string;
+  /** Money it cost (refunded on undo). */
+  readonly cost: number;
 }
 
 export interface Notice {

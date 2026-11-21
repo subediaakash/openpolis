@@ -85,6 +85,16 @@ Placeable showpieces in **Parks & Places**. They count as parks for happiness, e
 - The cursor sits on the footprint's centre tile (for 2×2, the tile above-left of centre).
 - The **Clear** tool removes the whole building if any of its tiles is selected (free for now).
 
+## Undo (touch, D-100)
+
+On touch screens every action builds when the finger lifts, so the last one can be taken back from the **Undo bar** for 6 seconds (`sim/undo.ts`, driven by `Game`):
+
+- **What it covers:** roads, rail, zoning, clearing, placing, moving, and Demolish from the info panel.
+- **How:** before the action, `captureUndo` snapshots the player-editable layers (trees, decor, road, bridge, lane, paving, zone, rail, flyovers) and the building ids on the action's tiles, widened to the whole footprint of any building there. `finishUndo` snapshots the same tiles afterwards. `applyUndo` restores the "before", puts removed buildings back as the same objects (residents, level and happiness included), returns a moved one to its old tile, deletes ones the action placed, and refunds what was spent.
+- **Only while untouched:** if those tiles no longer match the "after" (a home grew on the new zone, a fire took a building, another edit), undo is refused with a toast rather than erasing the city's own changes. A record undoes once, so it can never refund twice.
+- **One level:** a new action replaces the offer. The bar has no redo.
+- Mouse play has no undo yet; desktop is unchanged for now (user call).
+
 ## Data
 
 - `World.building[i]` holds the building instance id covering tile `i` (−1 if none).

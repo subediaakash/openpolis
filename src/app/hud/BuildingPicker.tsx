@@ -89,10 +89,9 @@ function BuildingPickerPanel() {
   });
   const fold = usePickerFold();
 
-  if (fold.drafting) return null;
   if (fold.folded) {
     const d: BuildingDef = BUILDINGS[choice];
-    return <PickerChip kind="building-picker" picture={<BuildingThumb id={choice} size={36} />} name={d.name} cost={`$${d.cost.toLocaleString()}`} onChange={fold.unfold} />;
+    return <PickerChip kind="building-picker" picture={<BuildingThumb id={choice} size={36} />} name={d.name} cost={`$${d.cost.toLocaleString()}`} onChange={fold.unfold} onClose={() => game?.setTool('select')} />;
   }
   // Locked buildings (D-086) come last, greyed, with the stage that unlocks them.
   const isLocked = (id: BuildingId) => {

@@ -17,6 +17,8 @@ const RETRY_MS = 5_000;
 
 export type SaveStatus =
   | { readonly kind: 'new' }
+  /** A guest past the trial (D-102): play goes on, nothing is saved until they sign up. */
+  | { readonly kind: 'paused' }
   | { readonly kind: 'saving' }
   | { readonly kind: 'saved'; readonly at: number; readonly store: StoreKind }
   | { readonly kind: 'error'; readonly message: string };
@@ -35,6 +37,12 @@ const STORES: Readonly<Record<StoreKind, SaveStore>> = { local: localStore, clou
 
 const sameStamp = (a: ChangeStamp | null, b: ChangeStamp) => a !== null && a.edits === b.edits && a.day === b.day;
 
+/**
+ * Fired on window just before the page leaves to sign in elsewhere (GitHub OAuth): the one time
+ * a paused saver still keeps the city, so it comes back into the account after the redirect.
+ */
+export const AUTH_HANDOFF_EVENT = 'openpolis:auth-handoff';
+
 export class CitySaver {
   private ref: CityRef | null;
   /** What the last successful save contained; null = never saved in this session. */
@@ -45,6 +53,8 @@ export class CitySaver {
   /** savedAt of the newest snapshot this saver put in the journal (0 = none). */
   private journalAt = 0;
   private readonly offWorldChanged: () => void;
+  /** Saving is off (a guest past the trial, D-102): no store writes and no journal. */
+  private paused = false;
   private readonly game: Game;
   private readonly opts: CitySaverOptions;
 
@@ -58,6 +68,7 @@ export class CitySaver {
     this.offWorldChanged = game.events.on('worldChanged', () => this.scheduleEditSave());
     document.addEventListener('visibilitychange', this.onVisibility);
     window.addEventListener('pagehide', this.onPageHide);
+    window.addEventListener(AUTH_HANDOFF_EVENT, this.onHandoff);
     opts.onStatus(opts.ref ? { kind: 'saved', at: Date.now(), store: opts.ref.store } : { kind: 'new' });
   }
 
@@ -75,13 +86,31 @@ export class CitySaver {
     return !sameStamp(this.saved, stamp) || this.needsMove();
   }
 
+  /**
+   * Stop or resume saving (D-102). Paused, the city keeps running but nothing is written, not even
+   * the closing-tab journal. Resuming (the guest signed up or logged in) saves straight away, which
+   * moves the city, with everything since the pause, into the account.
+   */
+  setPaused(paused: boolean) {
+    if (paused === this.paused) return;
+    this.paused = paused;
+    if (paused) {
+      this.opts.onStatus({ kind: 'paused' });
+      return;
+    }
+    this.opts.onStatus(this.ref ? { kind: 'saved', at: Date.now(), store: this.ref.store } : { kind: 'new' });
+    void this.autosave();
+  }
+
   /** Save if anything changed (the autosave timer, tab hidden, leaving the city). */
   autosave(): Promise<void> {
+    if (this.paused) return Promise.resolve();
     return this.dirty ? this.saveNow() : (this.inFlight ?? Promise.resolve());
   }
 
   /** Save now, even a new city with no edits. Never throws: failures show in the status. */
   saveNow(): Promise<void> {
+    if (this.paused) return Promise.resolve();
     // One save at a time; a request during a save runs right after it.
     if (this.inFlight) return this.inFlight.then(() => this.saveNow());
     this.inFlight = this.write().finally(() => {
@@ -96,6 +125,7 @@ export class CitySaver {
     this.offWorldChanged();
     document.removeEventListener('visibilitychange', this.onVisibility);
     window.removeEventListener('pagehide', this.onPageHide);
+    window.removeEventListener(AUTH_HANDOFF_EVENT, this.onHandoff);
   }
 
   /**
@@ -103,7 +133,11 @@ export class CitySaver {
    * reloading tab is guaranteed to finish. Call before the game goes away.
    */
   journalNow() {
-    if (!this.dirty) return;
+    if (this.paused || !this.dirty) return;
+    this.writeJournalNow();
+  }
+
+  private writeJournalNow() {
     const snap = this.snapshot();
     if (snap) this.journal(snap.data.savedAt ?? 0, snap.meta, snap.json);
   }
@@ -112,6 +146,11 @@ export class CitySaver {
     if (document.visibilityState !== 'hidden') return;
     this.journalNow();
     void this.autosave();
+  };
+
+  /** Leaving to sign in (OAuth): keep the city even when paused, so it lands in the account. */
+  private readonly onHandoff = () => {
+    if (this.dirty) this.writeJournalNow();
   };
 
   private readonly onPageHide = () => {

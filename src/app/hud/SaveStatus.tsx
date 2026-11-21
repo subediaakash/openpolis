@@ -1,11 +1,12 @@
-import { useAtomValue } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useState } from 'react';
-import { saveStatusAtom } from '../atoms';
+import { authDialogAtom, saveStatusAtom } from '../atoms';
 import { timeAgo } from '../format';
 
 /** Save state in the top bar; click (or Ctrl/⌘ S) to save now. Hidden for cities that aren't saved. */
 export function SaveStatus({ onSave }: { onSave: () => void }) {
   const status = useAtomValue(saveStatusAtom);
+  const openDialog = useSetAtom(authDialogAtom);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -29,6 +30,10 @@ export function SaveStatus({ onSave }: { onSave: () => void }) {
       label = `Saved ${timeAgo(status.at, now)}`;
       title = `${status.store === 'cloud' ? 'Saved to your account' : 'Saved on this device · log in to keep it in an account'} · autosaves as you play (Ctrl/⌘ S)`;
       break;
+    case 'paused':
+      label = 'Not saving';
+      title = 'Guest time is up: you can keep playing, but nothing is saved until you make a free account · click to sign up';
+      break;
     case 'error':
       label = 'Save failed';
       title = `${status.message} · retrying automatically · click to try now`;
@@ -36,7 +41,7 @@ export function SaveStatus({ onSave }: { onSave: () => void }) {
   }
 
   return (
-    <button type="button" className={`save-status is-${status.kind}`} title={title} onClick={onSave} disabled={status.kind === 'saving'}>
+    <button type="button" className={`save-status is-${status.kind}`} title={title} onClick={status.kind === 'paused' ? () => openDialog('signup') : onSave} disabled={status.kind === 'saving'}>
       <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
         {status.kind === 'saved' && status.store === 'cloud' ? (
           <path d="M7 18h10a4 4 0 0 0 .6-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />

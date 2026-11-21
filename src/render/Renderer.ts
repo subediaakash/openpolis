@@ -158,6 +158,7 @@ export class Renderer {
     try {
       await stage?.('art');
       r.setupArt();
+      app.canvas.addEventListener('webglcontextrestored', r.onContextRestored);
       await stage?.('map');
       r.setupMap();
     } catch (err) {
@@ -233,9 +234,27 @@ export class Renderer {
   /** Paint the texture atlas (terrain, buildings, vehicles, effects): the longest boot step. */
   private setupArt() {
     const t0 = performance.now();
-    this.textures = buildTerrainTextures();
+    this.textures = buildTerrainTextures(this.view.r);
+    this.uploadArt();
     this.timings.atlas = performance.now() - t0;
   }
+
+  /** Send the atlas pages to the GPU and empty their canvases, so only the GPU copy stays (D-103). */
+  private uploadArt() {
+    const gpu = this.app.renderer.texture;
+    this.textures.atlas.upload(gpu);
+    this.textures.buildings.upload(gpu);
+  }
+
+  /**
+   * A lost WebGL context took the GPU copies with it, and the canvases were emptied after
+   * upload. Pixi's own listener runs first and resets its textures; repaint before the next frame.
+   */
+  private readonly onContextRestored = () => {
+    this.textures.atlas.repaint();
+    this.textures.buildings.repaint();
+    this.uploadArt();
+  };
 
   /** Build the layers and the ground meshes, and put the camera over the map. */
   private setupMap() {
@@ -328,7 +347,13 @@ export class Renderer {
     const before = worldToTileFloat(cam.x, cam.y);
     const centre = this.view.pointToWorld(before.x, before.y);
     this.viewRef.current = new ViewTransform(this.world.width, this.world.height, r);
+    // Buildings are painted for one rotation only (D-103): paint the new one, rebuild the map on
+    // it, then free the old pages. Pops still flashing would draw from those pages, so they go.
+    const oldPages = this.textures.buildings.setRotation(r);
+    this.textures.buildings.upload(this.app.renderer.texture);
+    this.effects.clearPops();
     this.buildTerrain();
+    oldPages?.destroy();
     const after = this.view.pointToView(centre.x, centre.y);
     const p = tileToWorld(after.x, after.y);
     cam.jumpTo(p.x, p.y, cam.zoom);
@@ -465,6 +490,7 @@ export class Renderer {
   }
 
   destroy() {
+    this.app.canvas.removeEventListener('webglcontextrestored', this.onContextRestored);
     // Shaders hold the atlas pages; let go of them before the textures are destroyed.
     this.ground.destroy();
     releaseTileShaders(this.textures.sources);

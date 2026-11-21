@@ -229,7 +229,7 @@ export function previewTiles(world: World, tex: TerrainTextures, p: ToolPlan, vi
     const ghost: PreviewTile = {
       x: origin.x,
       y: origin.y,
-      texture: buildingTexture(tex, building, b?.variant ?? 0, view.r),
+      texture: buildingTexture(tex, building, b?.variant ?? 0),
       footprint: BUILDINGS[building].size,
       offsetY: buildingHeadroom(building, b?.variant ?? 0),
       tint: ok ? 0xffffff : TINT_INVALID,
@@ -250,7 +250,7 @@ export function previewTiles(world: World, tex: TerrainTextures, p: ToolPlan, vi
     const ghost: PreviewTile = {
       x: origin.x,
       y: origin.y,
-      texture: tex.buildings[building][0][view.r],
+      texture: buildingTexture(tex, building, 0),
       footprint: BUILDINGS[building].size,
       offsetY: buildingHeadroom(building),
       tint: ok ? 0xffffff : TINT_INVALID,

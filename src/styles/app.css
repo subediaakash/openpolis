@@ -344,51 +344,81 @@ kbd {
   color: var(--danger);
 }
 
-/* A finished touch drag waits here for Build or Cancel (D-080). */
-.draft-confirm {
+/* After a touch action: what was done, and Undo for a few seconds (D-100). */
+.undo-bar {
   top: 64px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 6px 6px 12px;
+  gap: 10px;
+  padding: 5px 5px 5px 14px;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  overflow: hidden;
   z-index: var(--z-sheet);
   animation-name: hint-in;
 }
-.draft-what {
+.undo-what {
   display: flex;
   align-items: baseline;
   gap: 7px;
-  margin-right: 4px;
+  min-width: 0;
 }
-.draft-confirm.is-unaffordable .cost-value {
-  color: var(--danger);
-}
-.draft-cancel,
-.draft-build {
-  min-width: 72px;
-  min-height: 38px;
-  padding: 0 14px;
-  border: 1px solid var(--border-panel);
-  border-radius: 9px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  font: inherit;
+.undo-label {
   font-weight: 650;
-  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.draft-build {
-  border-color: var(--accent);
+.undo-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.undo-button:active {
   background: var(--accent);
   color: #062a27;
 }
-.draft-build:disabled {
-  opacity: 0.4;
-  cursor: default;
+/* A thin line along the bottom runs out with the time left to undo. */
+.undo-timer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+  transform-origin: left;
+  animation: undo-run linear forwards;
+}
+@keyframes undo-run {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .undo-timer {
+    display: none;
+  }
+}
+/* While a picker sheet is open the player is choosing, not undoing: the bar steps aside. */
+body:has(.building-picker:not(.is-chip)) .undo-bar,
+body:has(.road-picker:not(.is-chip)) .undo-bar {
+  display: none;
 }
 
 /* ---------- Notices ---------- */
@@ -949,6 +979,43 @@ kbd {
   inset: 6px;
   cursor: pointer;
   touch-action: none;
+}
+/* Phones (D-100): − folds the minimap into a small map button in the same corner. */
+.minimap-fold {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 var(--radius) 0 12px;
+  background: rgba(10, 16, 26, 0.72);
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.minimap-fold svg {
+  width: 26px;
+  height: 26px;
+}
+.minimap-pill {
+  right: 16px;
+  bottom: 20px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.minimap-pill:active {
+  transform: scale(0.94);
 }
 
 /* ---------- New Game screen ---------- */
@@ -2528,25 +2595,37 @@ button.funds:hover {
 }
 
 /* ---------- Road picker (docs/specs/transport.md) ---------- */
+/*
+ * One slim row of cards over the toolbar, so most of the map stays free to draw on (a 14-inch
+ * laptop had about 200 px left with two rows of cards). The chosen road's blurb is in the hint.
+ */
 .road-picker {
   bottom: 96px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(760px, calc(100vw - 32px));
-  padding: 10px;
+  width: min(800px, calc(100vw - 32px));
+  max-height: calc(100dvh - 200px);
+  overflow-y: auto;
+  padding: 8px;
   animation-name: hint-in;
+  transition: opacity 160ms var(--ease-out);
+}
+.road-picker.is-dragging {
+  opacity: 0.12;
+  pointer-events: none;
 }
 .road-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 6px;
+  display: flex;
+  gap: 5px;
 }
 .road-card {
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  padding: 8px 8px 7px;
+  min-width: 0;
+  padding: 6px 7px 5px;
   border: 1px solid var(--border-panel);
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.04);
@@ -2568,19 +2647,33 @@ button.funds:hover {
   outline: 2px solid var(--accent);
 }
 .road-section {
-  margin-bottom: 3px;
+  width: 44px;
+  height: 26px;
+  margin-bottom: 2px;
   border-radius: 4px;
   background: #5aa843;
 }
 .road-name {
-  font-size: 12.5px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 12px;
   font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
+/* The blurb lives in the card's tooltip and, for the chosen road, the hint line. */
 .road-blurb {
-  min-height: 2.6em;
-  color: var(--text-dim);
-  font-size: 10.5px;
-  line-height: 1.3;
+  display: none;
+}
+/* Crossings and paving share one line. */
+.road-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 18px;
+}
+.road-options:empty {
+  display: none;
 }
 .road-meta {
   display: flex;
@@ -2606,8 +2699,8 @@ button.funds:hover {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
-  margin-top: 9px;
+  gap: 5px;
+  margin-top: 7px;
 }
 .pavement-label {
   margin-right: 2px;
@@ -2621,7 +2714,7 @@ button.funds:hover {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 9px;
+  padding: 3px 9px;
   border: 1px solid var(--border-panel);
   border-radius: 999px;
   background: transparent;
@@ -2641,9 +2734,14 @@ button.funds:hover {
   background: rgba(79, 209, 197, 0.12);
 }
 .road-hint {
-  margin: 8px 2px 0;
+  margin: 7px 2px 0;
   color: var(--text-dim);
   font-size: 11.5px;
+  line-height: 1.35;
+}
+.road-hint-what {
+  color: var(--text);
+  font-weight: 600;
 }
 
 /* ---------- Landing page (guests who aren't signed in) ----------
@@ -3205,6 +3303,10 @@ summary {
     padding: 4px;
     zoom: 0.58;
   }
+  .minimap-pill {
+    right: calc(8px + var(--safe-r));
+    bottom: calc(6px + var(--safe-b));
+  }
 
   /*
    * Pickers: one short row above the toolbar that scrolls sideways, so the map stays in view.
@@ -3221,7 +3323,7 @@ summary {
     animation-name: panel-in;
   }
 
-  .draft-confirm {
+  .undo-bar {
     top: calc(46px + var(--safe-t));
     font-size: 12px;
   }
@@ -3812,164 +3914,7 @@ summary {
   background: #f5bf55;
 }
 
-/* Below the sign-in dialog (z 100), above everything in the game. */
-.guest-gate {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: grid;
-  place-items: center;
-  overflow-y: auto;
-  padding: max(16px, var(--safe-t, 0px)) max(16px, var(--safe-r, 0px)) max(16px, var(--safe-b, 0px)) max(16px, var(--safe-l, 0px));
-  background: rgba(6, 11, 15, 0.74);
-  backdrop-filter: blur(4px) saturate(80%);
-  -webkit-backdrop-filter: blur(4px) saturate(80%);
-  animation: fade-in-tour 300ms var(--ease-out) both;
-}
-.gate-card {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  width: min(720px, 100%);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  background: var(--ink-raised);
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
-  color: var(--paper);
-  overflow: hidden;
-  animation: dialog-in 280ms var(--ease-out) both;
-}
-/* The left side reads like a survey sheet: grid paper, the city's name, a stamp. */
-.gate-permit {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 24px 22px;
-  border-right: 1px dashed var(--rule);
-  background:
-    linear-gradient(var(--rule) 1px, transparent 1px) 0 0 / 100% 22px,
-    linear-gradient(90deg, var(--rule) 1px, transparent 1px) 0 0 / 22px 100%,
-    var(--ink);
-}
-.gate-city {
-  font-family: var(--font-display);
-  font-size: 24px;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
-}
-.gate-stats {
-  display: grid;
-  gap: 10px;
-  margin: 10px 0 0;
-}
-.gate-stats div {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--rule);
-}
-.gate-stats dt {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--paper-dim);
-}
-.gate-stats dd {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.gate-stamp {
-  align-self: flex-start;
-  margin-top: auto;
-  padding: 4px 8px;
-  border: 2px solid rgba(248, 113, 113, 0.75);
-  border-radius: 4px;
-  color: #f8a1a1;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transform: rotate(-4deg);
-}
-.gate-pitch {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 26px 28px 22px;
-}
-.gate-pitch h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 26px;
-  line-height: 1.1;
-}
-.gate-lead {
-  margin: 0;
-  color: var(--paper-dim);
-  font-size: 14.5px;
-  line-height: 1.5;
-}
-.gate-perks {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 13.5px;
-}
-.gate-perks li {
-  display: flex;
-  gap: 8px;
-}
-.gate-perks li::before {
-  content: '✓';
-  color: var(--sign);
-  font-weight: 700;
-}
-.gate-buttons {
-  display: grid;
-  gap: 8px;
-  margin-top: 4px;
-}
-.gate-buttons .auth-submit {
-  margin-top: 0;
-}
-.gate-foot {
-  margin: 0;
-  color: var(--paper-dim);
-  font-size: 13px;
-  text-align: center;
-}
-
-/* Upright or narrow: stack, with the city as a slim strip on top. */
-@media (max-width: 600px) {
-  .gate-card {
-    grid-template-columns: 1fr;
-  }
-  .gate-permit {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    padding: 14px 18px;
-    border-right: 0;
-    border-bottom: 1px dashed var(--rule);
-  }
-  .gate-permit .gate-kicker {
-    width: 100%;
-  }
-  .gate-stats {
-    display: none;
-  }
-  .gate-stamp {
-    margin: 0 0 0 auto;
-  }
-}
-/* Landscape phones: side by side still, everything tighter so it fits without scrolling. */
+/* Landscape phones: the reminder sits tighter under the slim bar. */
 @media (max-height: 520px) {
   .guest-nudge {
     top: calc(44px + var(--safe-t, 0px));
@@ -3977,44 +3922,14 @@ summary {
     width: min(260px, 40vw);
     font-size: 12px;
   }
-  .gate-card {
-    grid-template-columns: 190px 1fr;
-    width: min(680px, 100%);
-  }
-  .gate-permit {
-    padding: 14px 16px;
-    gap: 6px;
-  }
-  .gate-city {
-    font-size: 19px;
-  }
-  .gate-stats {
-    gap: 6px;
-    margin-top: 4px;
-  }
-  .gate-pitch {
-    gap: 8px;
-    padding: 14px 18px 12px;
-  }
-  .gate-pitch h2 {
-    font-size: 20px;
-  }
-  .gate-lead {
-    font-size: 12.5px;
-    line-height: 1.4;
-  }
-  .gate-perks {
-    gap: 3px;
-    font-size: 12px;
-  }
-  .gate-buttons {
-    grid-template-columns: 1fr 1fr;
-  }
-  .gate-buttons .auth-submit,
-  .gate-buttons .auth-provider {
-    min-height: 40px;
-    font-size: 13.5px;
-  }
+}
+
+/* After the trial (D-102): saving is paused, play goes on; the reminder gets a red edge. */
+.guest-nudge.is-paused {
+  border-left-color: var(--danger);
+}
+.save-status.is-paused {
+  color: var(--sign);
 }
 
 /* ---------- Info panel: actions, alert, stats, needs (redesign 2026-11-04) ---------- */
@@ -5376,6 +5291,10 @@ summary {
     padding: 4px;
     zoom: 0.62;
   }
+  .minimap-pill {
+    right: calc(8px + var(--safe-r));
+    bottom: var(--above-dock);
+  }
   .traffic-legend {
     left: calc(8px + var(--safe-l));
     right: auto;
@@ -5383,9 +5302,31 @@ summary {
     width: 200px;
     zoom: 0.88;
   }
-  .draft-confirm {
-    top: var(--below-bar);
-    max-width: calc(100vw - 16px);
+  /*
+   * Undo sits by the thumb, just above the dock (and the zone row when it's open), leaving the
+   * right edge to the minimap button; the top row is the "Citizens say" pill's and the toasts'.
+   */
+  .undo-bar {
+    top: auto;
+    bottom: var(--above-dock);
+    left: calc(8px + var(--safe-l));
+    right: auto;
+    max-width: calc(100vw - 76px - var(--safe-l) - var(--safe-r));
+    transform: none;
+  }
+  body:has(.dock-zones) .undo-bar {
+    bottom: calc(var(--above-dock) + var(--zone-row-h, 72px));
+  }
+  /* With the minimap open in that corner, it goes above the minimap instead. */
+  body:has(.minimap) .undo-bar {
+    bottom: calc(var(--above-dock) + 88px);
+  }
+  body:has(.minimap):has(.dock-zones) .undo-bar {
+    bottom: calc(var(--above-dock) + var(--zone-row-h, 72px) + 88px);
+  }
+  /* A folded picker chip has the same spot: the bar sits above it. */
+  body:has(.is-chip) .undo-bar {
+    bottom: calc(var(--above-dock) + 64px);
   }
   .notices {
     top: calc(var(--below-bar) + 48px);
@@ -5569,8 +5510,22 @@ summary {
   font-weight: 650;
   cursor: pointer;
 }
-.chip-change:active {
+.chip-change:active,
+.chip-close:active {
   transform: scale(0.96);
+}
+/* Stop placing: back to Select with the picker closed (D-100). */
+.chip-close {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 40px;
+  min-height: 40px;
+  border: 1px solid var(--border-panel);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-dim);
+  cursor: pointer;
 }
 /* Upright tablets centre the pickers; the chip keeps to the dock's left edge instead. */
 @media (min-width: 641px) and (max-width: 900px) and (min-height: 521px) {
@@ -5620,8 +5575,8 @@ summary {
     flex: none;
     white-space: nowrap;
   }
-  /* Build / Cancel by the right thumb, above the minimap; toasts under the top bar. */
-  .draft-confirm {
+  /* Undo by the right thumb, above the minimap; toasts under the top bar. */
+  .undo-bar {
     top: auto;
     left: auto;
     right: calc(8px + var(--safe-r));

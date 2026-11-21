@@ -41,6 +41,8 @@ import { SoundBoard } from './audio';
 import { daylightTint, nightness } from '../render/daylight';
 import type { Point, ViewTransform } from '../render/view/ViewTransform';
 import { EventBus, type DayNightMode, type GameEventMap, type Notice, type ProgressInfo } from './events';
+import { haptic } from './haptics';
+import { applyUndo, captureUndo, finishUndo, type UndoCapture, type UndoRecord } from '../sim/undo';
 import { InputController, type ScreenPoint } from './input/InputController';
 import { GameLoop } from './loop';
 import { type LoadProgress, type LoadStage } from './loading';
@@ -99,6 +101,32 @@ const TOOL_LABEL = {
   'zone-ch': 'Offices',
   'zone-i': 'Industry',
 } as const;
+/** How far a finger must travel (CSS px) before a touch drag leaves its first tile. */
+const TOUCH_SLOP_PX = 10;
+
+/** A touch screen with no hover (phones, tablets): where info-panel actions get the Undo bar (D-100). */
+function isTouchScreen(): boolean {
+  return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+}
+
+/** What the Undo bar says a finished touch action did. */
+function actionLabel(p: ToolPlan): string {
+  switch (p.kind) {
+    case 'road':
+      return `${ROAD_SPECS[p.roadType].name} built`;
+    case 'rail':
+      return 'Track laid';
+    case 'clear':
+      return p.plan.count === 1 ? 'Tile cleared' : `${p.plan.count} tiles cleared`;
+    case 'zone':
+      return `${TOOL_LABEL[p.tool]} zoned`;
+    case 'place':
+      return `${BUILDINGS[p.plan.building].name} built`;
+    case 'move':
+      return `${BUILDINGS[p.plan.building].name} moved`;
+  }
+}
+
 /** Toast ids, unique across game instances (dev mode mounts a game twice, sharing one HUD store). */
 let noticeSeq = 0;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
@@ -121,11 +149,15 @@ export class Game {
   private speedIndex = 1;
   private inspected: number | null = null;
   private drag: ToolDrag | null = null;
-  /**
-   * The drag is finished but was drawn with a finger, so it waits for Build or Cancel (D-080):
-   * a finger hides what it draws, and a tap shouldn't spend money.
-   */
-  private awaitingConfirm = false;
+  /** Where the finger went down, so a jittery tap doesn't stretch into a two-tile drag. */
+  private touchDown: ScreenPoint | null = null;
+  /** Build or Move by finger: where the finger is resting, until it travels (then it pans). */
+  private touchPress: ScreenPoint | null = null;
+  /** That finger has turned into a pan: no ghost until it lifts. */
+  private touchPanning = false;
+  /** The last touch action, while the Undo bar offers it (D-100). */
+  private undoRecord: UndoRecord | null = null;
+  private undoId = 0;
   private lastPointer: ScreenPoint | null = null;
   private dayNightMode = readDayNight();
   /** The data view shown over the city, if any (roads by congestion, buildings by happiness). */
@@ -162,11 +194,11 @@ export class Game {
     this.input = new InputController(renderer.app.canvas, renderer.camera, {
       onPointer: (p) => this.updateHover(p),
       onKey: (code) => this.onKey(code),
-      onPrimaryDown: (p, shift) => this.onPrimaryDown(p, shift),
+      onPrimaryDown: (p, shift, touch) => this.onPrimaryDown(p, shift, touch),
       onPrimaryMove: (p, shift) => this.onPrimaryMove(p, shift),
       onPrimaryUp: (_p, _shift, touch) => this.onPrimaryUp(touch),
       onCancel: () => this.cancel(),
-      onClick: (p) => this.onClick(p),
+      onClick: (p, touch) => this.onClick(p, touch),
     });
     renderer.setAgentSource(
       () => this.traffic.agents,
@@ -306,7 +338,7 @@ export class Game {
    * The Move tool: the first click picks a building up, the next sets it down where the
    * cursor is (docs/specs/buildings.md, "Moving"). Esc or right-click drops the pick.
    */
-  private moveClick(t: TilePos) {
+  private moveClick(t: TilePos, touch = false) {
     if (this.carrying === null) {
       const b = this.world.buildings.get(this.world.building[this.world.index(t.x, t.y)]);
       if (!b) return;
@@ -317,7 +349,8 @@ export class Game {
       }
       this.carrying = b.id;
       this.sound.play('tool');
-      this.notify('info', `Moving the ${BUILDINGS[b.def].name}: click where it should go (Esc to cancel)`);
+      const how = touch ? 'drag the map to find a spot, then tap where it should go' : 'click where it should go (Esc to cancel)';
+      this.notify('info', `Moving the ${BUILDINGS[b.def].name}: ${how}`);
       this.updatePreview();
       return;
     }
@@ -325,7 +358,10 @@ export class Game {
     if (!p || p.kind !== 'move') return;
     const funds = this.city.funds;
     const moved = this.carrying;
-    this.execute(p);
+    const carried = this.world.buildings.get(moved);
+    const cap = touch ? captureUndo(this.city, carried ? [...p.plan.tiles, { x: carried.x, y: carried.y }] : p.plan.tiles) : null;
+    const changed = this.execute(p, touch);
+    if (cap && changed) this.offerUndo(cap, `${BUILDINGS[p.plan.building].name} moved`);
     // Moved (money spent): back to Select with the building still selected at its new place.
     if (this.city.funds < funds) {
       this.setTool('select');
@@ -340,7 +376,7 @@ export class Game {
     if (!this.world.buildings.has(id)) return;
     this.setTool('move');
     const b = this.world.buildings.get(id);
-    if (b) this.moveClick({ x: b.x, y: b.y });
+    if (b) this.moveClick({ x: b.x, y: b.y }, isTouchScreen());
     this.inspect(null);
   }
 
@@ -350,7 +386,6 @@ export class Game {
     if (tool !== this.toolId) this.sound.play('tool');
     this.toolId = tool;
     this.drag = null;
-    this.awaitingConfirm = false;
     this.renderer.app.canvas.style.cursor = tool === 'select' ? '' : 'crosshair';
     this.renderer.hover.set(tool === 'select' ? this.hovered : null);
     this.renderer.setZoneView(isZoneTool(tool));
@@ -379,23 +414,34 @@ export class Game {
     this.updatePreview();
   }
 
-  private onPrimaryDown(screen: ScreenPoint, shift: boolean): boolean {
+  private onPrimaryDown(screen: ScreenPoint, shift: boolean, touch: boolean): boolean {
     if (this.toolId === 'select') return false;
-    const t = this.tileAt(screen);
-    if (this.toolId === 'move') {
+    if (touch && (this.toolId === 'build' || this.toolId === 'move')) {
+      // Placing by finger (D-100): one finger pans while you look for a spot, holding still
+      // shows the ghost and price, and a tap (onClick) puts it down. Nothing is dragged.
+      this.touchPress = screen;
       this.lastPointer = screen;
+      this.updateHover(screen);
+      return false;
+    }
+    const t = this.tileAt(screen);
+    this.lastPointer = screen;
+    if (this.toolId === 'move') {
       this.moveClick(t);
       return true;
     }
     this.drag = { start: t, current: t, straight: shift };
-    this.awaitingConfirm = false;
-    this.lastPointer = screen;
+    this.touchDown = touch ? screen : null;
     this.updatePreview();
     return true;
   }
 
   private onPrimaryMove(screen: ScreenPoint, shift: boolean) {
     if (!this.drag) return;
+    // A finger wobbles: it has to travel a little before the drag leaves its first tile.
+    const down = this.touchDown;
+    if (down && Math.hypot(screen.x - down.x, screen.y - down.y) < TOUCH_SLOP_PX) return;
+    this.touchDown = null;
     const t = this.tileAt(screen);
     this.lastPointer = screen;
     if (t.x === this.drag.current.x && t.y === this.drag.current.y && shift === this.drag.straight) {
@@ -407,31 +453,86 @@ export class Game {
   }
 
   private onPrimaryUp(touch: boolean) {
-    if (!this.drag) return;
-    if (touch) {
-      // Keep the drag as a draft: its preview stays on the map until the player confirms.
-      this.awaitingConfirm = true;
-      this.emitPreviewLabel();
-      return;
+    this.touchDown = null;
+    if (this.drag) this.commitDrag(touch);
+  }
+
+  /** A finger tapped the map with Build picked: place the building there, with Undo (D-100). */
+  private placeByTouch(t: TilePos) {
+    const p = this.plan(null, t);
+    if (!p || p.kind !== 'place') return;
+    const cap = captureUndo(this.city, p.plan.tiles);
+    const changed = this.execute(p, true);
+    if (changed) {
+      this.offerUndo(cap, actionLabel(p));
+      this.setTool('select');
     }
-    this.commitDrag();
   }
 
-  /** Build the drafted touch drag (the confirm bar's Build button). */
-  confirmDraft() {
-    if (this.awaitingConfirm) this.commitDrag();
-  }
-
-  private commitDrag() {
+  /**
+   * Build the finished drag. A finger's drag builds on release too (D-100, replacing D-080's
+   * Build / Cancel bar): it gets an Undo bar instead, and the tool goes back to Select so the
+   * next finger pans the map. Zones stay picked, since zoning takes several strokes.
+   */
+  private commitDrag(touch = false) {
     const p = this.drag ? this.plan(this.drag, null) : null;
     this.drag = null;
-    this.awaitingConfirm = false;
-    if (p) this.execute(p);
+    if (p) {
+      const cap = touch ? captureUndo(this.city, p.plan.tiles) : null;
+      const changed = this.execute(p, touch);
+      if (cap && changed) {
+        this.offerUndo(cap, actionLabel(p));
+        if (p.kind !== 'zone') this.setTool('select');
+      }
+    }
     this.updatePreview();
   }
 
+  /** Keep a finished touch action for the Undo bar. */
+  private offerUndo(cap: UndoCapture, label: string) {
+    const rec = finishUndo(this.city, cap);
+    this.undoRecord = rec;
+    if (!rec) return;
+    this.events.emit('undo', { id: ++this.undoId, label, cost: rec.spent });
+  }
+
+  /** The Undo bar's button: take the last touch action back and refund it (D-100). */
+  undo() {
+    const rec = this.undoRecord;
+    this.undoRecord = null;
+    this.events.emit('undo', null);
+    if (!rec) return;
+    const r = applyUndo(this.city, rec);
+    if (!r.ok || !r.changed) {
+      this.sound.play('error');
+      haptic('error');
+      this.notify('error', 'Too late to undo: the city has already changed there');
+      return;
+    }
+    this.edits++;
+    const c = r.changed;
+    // Roads change which lots can grow up to roadAccessRange tiles away; refresh that far.
+    const g = BALANCE.roadAccessRange;
+    this.renderer.refreshWorld({ x: c.minX - g, y: c.minY - g, w: c.maxX - c.minX + 1 + 2 * g, h: c.maxY - c.minY + 1 + 2 * g });
+    this.events.emit('funds', this.city.funds);
+    this.afterWorldChange(true);
+    this.sound.play('clear');
+    haptic('tap');
+    this.notify('info', r.refunded ? `Undone · $${r.refunded.toLocaleString()} back` : 'Undone');
+    if (this.inspected !== null && !this.world.buildings.has(this.inspected)) this.inspect(null);
+    else this.emitInspect();
+    this.updatePreview();
+  }
+
+  /** The Undo bar timed out or was closed: the action stays. */
+  dismissUndo() {
+    if (!this.undoRecord) return;
+    this.undoRecord = null;
+    this.events.emit('undo', null);
+  }
+
   /** Apply a tool plan: mutate the world, then refresh rendering, sim caches and UI. */
-  private execute(p: ToolPlan) {
+  private execute(p: ToolPlan, touch = false): boolean {
     // What's on each tile before it changes decides the particles (leaves, grit, dust).
     const debris = this.debrisOf(p.plan.tiles);
     // Rezoning or dezoning removes grown buildings; they get a puff of dust.
@@ -467,6 +568,8 @@ export class Game {
       if (p.kind === 'zone') this.warnUnreachableZones(result.tiles ?? []);
       // Track changes the train network the commute model plans over, like roads.
       this.afterWorldChange(p.kind === 'road' || p.kind === 'clear' || p.kind === 'rail');
+      if (touch) haptic(p.kind === 'clear' ? 'heavy' : 'tap');
+      return true;
     } else if (result.reason === 'insufficient-funds') {
       this.sound.play('error');
       this.notify('error', `Not enough money: needs $${p.plan.cost.toLocaleString()}`);
@@ -485,6 +588,10 @@ export class Game {
           : `${name} unlocks at ${stage.name} (${stage.population.toLocaleString()} people)`,
       );
     }
+    // Every path left is a refusal (blocked, no money, locked) or nothing to do.
+    const blocked = (p.kind === 'place' || p.kind === 'move') && !p.plan.ok;
+    if (touch && (blocked || result.reason !== 'nothing-to-do')) haptic('error');
+    return false;
   }
 
   /** Zones only grow within reach of a road; say so when some of the new zone can't. */
@@ -662,7 +769,7 @@ export class Game {
           // Fractional tile coords put the pop at the footprint's centre.
           x: b.x + (w - 1) / 2,
           y: b.y + (h - 1) / 2,
-          texture: buildingTexture(this.renderer.textures, b.def, b.variant, this.renderer.rotation),
+          texture: buildingTexture(this.renderer.textures, b.def, b.variant),
           anchorY: (buildingHeadroom(b.def, b.variant) + GROUND_PAD + ((w + h) * HALF_H) / 2) / frame.h,
         },
       ],
@@ -939,7 +1046,17 @@ export class Game {
 
   // ---------------------------------------------------------------- inspect
 
-  private onClick(screen: ScreenPoint) {
+  private onClick(screen: ScreenPoint, touch: boolean) {
+    this.touchPress = null;
+    if (touch && this.toolId === 'build') {
+      this.placeByTouch(this.tileAt(screen));
+      return;
+    }
+    if (touch && this.toolId === 'move') {
+      // First tap picks the building up, the next sets it down (one finger pans in between).
+      this.moveClick(this.tileAt(screen), true);
+      return;
+    }
     if (this.toolId !== 'select') return;
     const t = this.tileAt(screen);
     const id = this.world.building[this.world.index(t.x, t.y)];
@@ -988,7 +1105,11 @@ export class Game {
     if (!b) return;
     const { w, h } = BUILDINGS[b.def].size;
     const plan = planClear(this.world, rectTiles({ x: b.x, y: b.y }, { x: b.x + w - 1, y: b.y + h - 1 }));
-    this.execute({ kind: 'clear', tool: 'clear', plan });
+    // On touch screens the info panel's Demolish is undoable like any other touch action (D-100).
+    const touch = isTouchScreen();
+    const cap = touch ? captureUndo(this.city, plan.tiles) : null;
+    const changed = this.execute({ kind: 'clear', tool: 'clear', plan }, touch);
+    if (cap && changed) this.offerUndo(cap, `${BUILDINGS[b.def].name} demolished`);
     this.inspect(null);
   }
 
@@ -1121,7 +1242,6 @@ export class Game {
     }
     if (this.drag) {
       this.drag = null;
-      this.awaitingConfirm = false;
       this.updatePreview();
     } else if (this.toolId !== 'select') {
       this.setTool('select');
@@ -1169,7 +1289,6 @@ export class Game {
       count: p.plan.count,
       affordable: p.plan.cost <= this.city.funds,
       note: this.previewNote(p),
-      awaitingConfirm: this.drag !== null && this.awaitingConfirm,
     });
   }
 
@@ -1258,12 +1377,21 @@ export class Game {
     });
   }
 
-  private updateHover(screen: ScreenPoint | null) {
+  private updateHover(pointer: ScreenPoint | null) {
+    // Placing by finger: once the finger travels it's panning, so the ghost steps aside until
+    // the finger lifts (it would otherwise ride along with the map).
+    if (pointer === null) this.touchPanning = false;
+    else if (this.touchPress && Math.hypot(pointer.x - this.touchPress.x, pointer.y - this.touchPress.y) > TOUCH_SLOP_PX) {
+      this.touchPress = null;
+      this.touchPanning = true;
+    }
+    const screen = this.touchPanning ? null : pointer;
     let tile: TilePos | null = null;
     if (screen) {
       tile = this.renderer.screenToTile(screen.x, screen.y, false);
     }
-    if (screen && this.toolId === 'build') {
+    if (!screen && this.touchPanning) this.lastPointer = null;
+    if (screen && (this.toolId === 'build' || (this.toolId === 'move' && this.carrying !== null))) {
       this.lastPointer = screen;
       if (!this.drag) this.emitPreviewLabel();
     }

@@ -203,6 +203,24 @@ We focus on **one** terrain and make it look great before adding presets or menu
 - [ ] 11.5 Road segment graph + Dijkstra + isochrones: `commute.day` under 25 ms on /demo (**met: 15.3 ms** with a daily flat graph, identical results; isochrones still to do)
 - [ ] 11.6 Simulation in a Web Worker: main-thread sim cost under 1 ms per frame
 
+## Player Experience Pass (user priority, 2026-11-21)
+
+Mobile first; desktop unchanged unless noted.
+
+- [x] M1 Undo for touch actions: roads, rail, zones, clear, place, move, demolish; refund; refused once the city changed the tiles (`sim/undo.ts`, 9 tests incl. a living-city soak) (D-100)
+- [x] M2 Touch builds when the finger lifts; the Build / Cancel bar is gone (D-100)
+- [x] M3 Back to Select after road, rail, clear, place, move, demolish; zones stay picked (D-100)
+- [x] M4 ✕ on the picker chip puts the tool away and closes the picker
+- [x] M5 Minimap folds into a map button on phones (− on the minimap)
+- [x] Placing buildings on phones: one finger pans with a building picked, hold shows the ghost, tap places (Move the same)
+- [x] Touch slop (10 px), haptics on Android, cost label above the finger; tour wording updated
+- [x] Desktop road picker: one slim row, 389 → 148 px tall (Reddit report, D-101)
+- [ ] **Phone lag:** the daily pass costs ~40 ms in one frame on desktop (commute.day 30 ms avg / 45 ms max, needs.day up to 14 ms), so phones freeze ~120–200 ms each game day. Do 11.3 (spread `commute.day` over frames, keeping D-065 determinism) next
+- [x] Guest trial: after 30 minutes play goes on but saving stops until sign-up, with a reminder every 10 minutes (D-102)
+- [ ] Revisit a placement magnifier if touch placement errors persist after undo
+- [x] Atlas memory: buildings painted for the current view rotation only, height-sorted packing, canvases emptied after GPU upload (repainted on a lost context): 399 → 141 MB of GPU texture, 7 → 4 pages (D-103)
+- [ ] Atlas resolution per device (1.5× on phones and low-memory devices, ~141 → ~80 MB); test on a real iPhone
+
 ## Feature Track (user order, D-067)
 
 - [x] **A. Energy v2** → [specs/energy.md](specs/energy.md): coal, gas, wind (daily wind), solar (sun curve) and battery banks; demand follows the clock with an evening peak; hourly per-island balance; brownout notice; Energy Mix in the budget panel; deterministic tick clock (D-068); 4 energy tests

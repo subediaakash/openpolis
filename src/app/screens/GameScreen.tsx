@@ -4,13 +4,14 @@ import { Game, type GameOptions } from '../../game/Game';
 import { nextPaint } from '../../game/loading';
 import { CitySaver } from '../../save/CitySaver';
 import type { CityRef } from '../../save/SaveStore';
-import { authAtom, saveStatusAtom } from '../atoms';
+import { authAtom, guestSavingPausedAtom, saveStatusAtom } from '../atoms';
 import { connectGameToStore } from '../bridge';
 import { randomSeed } from '../options';
 import { BuildingPicker } from '../hud/BuildingPicker';
 import { RoadPicker } from '../hud/RoadPicker';
 import { ControlsHint } from '../hud/ControlsHint';
 import { CostLabel } from '../hud/CostLabel';
+import { UndoBar } from '../hud/UndoBar';
 import { DebugOverlay } from '../hud/DebugOverlay';
 import { InfoPanel } from '../hud/InfoPanel';
 import { BudgetPanel } from '../hud/BudgetPanel';
@@ -62,6 +63,12 @@ export function GameScreen({ options, cityRef, onSaved, onReroll, onNewCity }: G
   useEffect(() => {
     onSavedRef.current = onSaved;
   }, [onSaved]);
+
+  // A guest past the trial keeps playing but stops saving until they sign up (D-102).
+  const savingPaused = useAtomValue(guestSavingPausedAtom);
+  useEffect(() => {
+    saverRef.current?.setPaused(savingPaused);
+  }, [savingPaused, status.kind]);
 
   const save = useCallback(() => void saverRef.current?.saveNow(), []);
   /** Save anything unsaved first (leaving the city, logging out). */
@@ -211,6 +218,7 @@ function Hud({ options, onNewCity, onSave, beforeLogout }: HudProps) {
       <MoreSheet cityName={options.name} onNewCity={onNewCity} onSave={onSave} beforeLogout={beforeLogout} />
       <Notices />
       <CostLabel />
+      <UndoBar />
       <ControlsHint />
       {/* Starts on a new city until finished; an opened city only carries on a tour left midway. */}
       <Tour autoStart={options.demo ? 'never' : options.save ? 'resume' : 'start'} />

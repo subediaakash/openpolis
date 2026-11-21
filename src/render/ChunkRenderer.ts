@@ -468,7 +468,7 @@ export class ChunkRenderer {
     const p = tileToWorld(b.x, b.y);
     // Grown footprints are square (1×1 or 2×2), so a site frame fits any rotation.
     const site = b.construction > 0 && (size.w === 1 || size.w === 2) ? size.w : null;
-    const s = new Sprite(site ? this.tex.sites[site][constructionStage(b)] : buildingTexture(this.tex, b.def, b.variant, r));
+    const s = new Sprite(site ? this.tex.sites[site][constructionStage(b)] : buildingTexture(this.tex, b.def, b.variant));
     s.x = p.x - h * HALF_W - GROUND_PAD;
     // Footprints are flat (docs/specs/elevation.md), so the origin tile's level lifts the whole building.
     s.y = p.y - GROUND_PAD - (site ? siteHeadroom(site) : buildingHeadroom(b.def, b.variant)) - tileLift(this.world, b.x, b.y);

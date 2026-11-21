@@ -87,6 +87,12 @@ export class Effects {
     });
   }
 
+  /** Drop every pop still waiting or flashing (their textures are about to be freed). */
+  clearPops() {
+    for (const p of this.pops) this.release(p.sprite);
+    this.pops.length = 0;
+  }
+
   burst(x: number, y: number, kind: BurstKind, count: number, delay = 0) {
     const c = this.tileCenter(x, y);
     for (let k = 0; k < count && this.particles.length < MAX_PARTICLES; k++) {

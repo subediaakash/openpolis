@@ -1,11 +1,11 @@
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { api } from '../../save/api';
-import { authAtom, authDialogAtom, authProvidersAtom, cityAtom, fundsAtom, gameAtom } from '../atoms';
-import { GithubMark, signInWithGithub } from './AuthDialog';
+import { authAtom, authDialogAtom, gameAtom, guestSavingPausedAtom } from '../atoms';
 import { GUEST_TRIAL_ON, HEARTBEAT_MS, OFFLINE_GRACE_MS, readGuestId, readNudged, writeGuestId, writeNudged } from './guestPlay';
 
-const PERKS = ['Saved online, safe if this browser is cleared', 'Carry on from any phone or computer', 'Free, no card, no ads'] as const;
+/** "Later" on the saving-paused reminder hides it this long; then it comes back. */
+const REMIND_AGAIN_MS = 10 * 60_000;
 
 /** What the server last said about this guest's trial. */
 interface TrialStatus {
@@ -14,19 +14,24 @@ interface TrialStatus {
 }
 
 /**
- * Guest trial (D-083). The server measures play from heartbeats sent while the tab is visible
- * and answers ok, nudge (a reminder they can close) or gate (play pauses until they sign up or
- * log in; the city moves into the account). If the server can't be reached for a few minutes of
- * play, play pauses too, so blocking the API doesn't skip the trial.
+ * Guest trial (D-083, D-102). The server measures play from heartbeats sent while the tab is
+ * visible and answers ok, nudge (a reminder they can close) or gate. At the gate play goes on, but
+ * **saving stops** until the guest signs up or logs in (then the city, everything since included,
+ * moves into the account), and a reminder says so, coming back every few minutes after "Later".
+ * If the server can't be reached for a few minutes of play, saving stops the same way, so
+ * blocking the API doesn't buy unlimited saving.
  */
 export function GuestLimit({ cityName }: { cityName: string }) {
   const auth = useAtomValue(authAtom);
   const game = useAtomValue(gameAtom);
   const openDialog = useSetAtom(authDialogAtom);
-  const speed = useAtomValue(cityAtom)?.speed ?? 0;
+  const setSavingPaused = useSetAtom(guestSavingPausedAtom);
   const [trial, setTrial] = useState<TrialStatus | null>(null);
   const [offline, setOffline] = useState(false);
   const [nudged, setNudged] = useState(readNudged);
+  /** The saving-paused reminder was put off until this time (ms), or 0. */
+  const [remindAt, setRemindAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   // Bumped by "Try again": restarts the heartbeat loop at once.
   const [attempt, setAttempt] = useState(0);
   const counting = GUEST_TRIAL_ON && auth.status === 'guest' && !!game;
@@ -66,25 +71,62 @@ export function GuestLimit({ cityName }: { cityName: string }) {
     };
   }, [counting, attempt]);
 
-  // The gate holds the clock still (Space and [ ] included), so nothing happens to the city meanwhile.
-  const gated = counting && (offline || trial?.state === 'gate');
+  // Past the trial (or offline too long): saving stops; signing in (counting ends) resumes it.
+  const paused = counting && (offline || trial?.state === 'gate');
   useEffect(() => {
-    if (gated && speed > 0) game?.setSpeed(0);
-  }, [gated, game, speed]);
+    setSavingPaused(paused);
+  }, [paused, setSavingPaused]);
+  useEffect(() => () => setSavingPaused(false), [setSavingPaused]);
+
+  // Wake up when a put-off reminder is due again.
+  useEffect(() => {
+    if (!paused || remindAt <= Date.now()) return;
+    const t = setTimeout(() => setNow(Date.now()), remindAt - Date.now());
+    return () => clearTimeout(t);
+  }, [paused, remindAt]);
 
   if (!counting) return null;
-  if (gated) {
+
+  if (paused) {
+    if (remindAt > now) return null;
+    const later = () => {
+      const at = Date.now() + REMIND_AGAIN_MS;
+      setNow(Date.now());
+      setRemindAt(at);
+    };
     return (
-      <GuestGate
-        cityName={cityName}
-        minutes={Math.round((trial?.playSeconds ?? 0) / 60)}
-        offline={offline}
-        onRetry={() => setAttempt((a) => a + 1)}
-      />
+      <div className="guest-nudge is-paused" role="status">
+        <span className="gate-kicker">{offline ? 'Reconnecting' : 'Saving is paused'}</span>
+        {offline ? (
+          <p>
+            Guest play saves only while Openpolis can be reached. Keep building: <strong>{cityName}</strong> saves again the
+            moment we're back.
+          </p>
+        ) : (
+          <p>
+            Guest time is up. Keep building, but changes to <strong>{cityName}</strong> from now on aren't saved. A free account
+            saves it, everything since included.
+          </p>
+        )}
+        <div className="guest-nudge-actions">
+          <button type="button" className="gate-text" onClick={later}>
+            Later
+          </button>
+          {offline ? (
+            <button type="button" className="gate-small" onClick={() => setAttempt((a) => a + 1)}>
+              Try again
+            </button>
+          ) : (
+            <button type="button" className="gate-small" onClick={() => openDialog('signup')}>
+              Save my city
+            </button>
+          )}
+        </div>
+      </div>
     );
   }
-  if (trial?.state !== 'nudge' || nudged) return null;
 
+  if (trial?.state !== 'nudge' || nudged) return null;
   const later = () => {
     writeNudged();
     setNudged(true);
@@ -102,100 +144,6 @@ export function GuestLimit({ cityName }: { cityName: string }) {
         <button type="button" className="gate-small" onClick={() => openDialog('signup')}>
           Save my city
         </button>
-      </div>
-    </div>
-  );
-}
-
-interface GuestGateProps {
-  readonly cityName: string;
-  readonly minutes: number;
-  /** The server couldn't be reached, rather than the trial being over. */
-  readonly offline: boolean;
-  readonly onRetry: () => void;
-}
-
-/** The pause card: the player's own city on the left (what they'd keep), the way in on the right. */
-function GuestGate({ cityName, minutes, offline, onRetry }: GuestGateProps) {
-  const openDialog = useSetAtom(authDialogAtom);
-  const providers = useAtomValue(authProvidersAtom);
-  const city = useAtomValue(cityAtom);
-  const funds = useAtomValue(fundsAtom);
-  const [leaving, setLeaving] = useState(false);
-
-  return (
-    <div className="guest-gate">
-      <div className="gate-card" role="dialog" aria-modal="true" aria-labelledby="gate-title">
-        <section className="gate-permit" aria-label="Your city so far">
-          <span className="gate-kicker">Your city so far</span>
-          <strong className="gate-city">{cityName}</strong>
-          <dl className="gate-stats">
-            <div>
-              <dt>Residents</dt>
-              <dd>{(city?.population ?? 0).toLocaleString()}</dd>
-            </div>
-            <div>
-              <dt>Treasury</dt>
-              <dd>${funds.toLocaleString()}</dd>
-            </div>
-            {minutes > 0 && (
-              <div>
-                <dt>Planned for</dt>
-                <dd>{minutes} min</dd>
-              </div>
-            )}
-          </dl>
-          <span className="gate-stamp">{offline ? 'Saved on this device' : 'Not backed up'}</span>
-        </section>
-
-        {offline ? (
-          <section className="gate-pitch">
-            <h2 id="gate-title">Reconnecting…</h2>
-            <p className="gate-lead">
-              Guest play needs a connection to Openpolis. Your city is safe on this device and carries on the moment we're back.
-            </p>
-            <div className="gate-buttons">
-              <button type="button" className="auth-submit" autoFocus onClick={onRetry}>
-                Try again
-              </button>
-            </div>
-          </section>
-        ) : (
-          <section className="gate-pitch">
-            <h2 id="gate-title">Keep building {cityName}</h2>
-            <p className="gate-lead">Guest time is up. Make a free account in a few seconds and this city comes with you, exactly as it is.</p>
-            <ul className="gate-perks">
-              {PERKS.map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-            <div className="gate-buttons">
-              <button type="button" className="auth-submit" autoFocus onClick={() => openDialog('signup')}>
-                Create free account
-              </button>
-              {providers.github && (
-                <button
-                  type="button"
-                  className="auth-provider"
-                  disabled={leaving}
-                  onClick={() => {
-                    setLeaving(true);
-                    signInWithGithub();
-                  }}
-                >
-                  <GithubMark />
-                  {leaving ? 'Opening GitHub…' : 'Continue with GitHub'}
-                </button>
-              )}
-            </div>
-            <p className="gate-foot">
-              Already have an account?{' '}
-              <button type="button" className="gate-text" onClick={() => openDialog('login')}>
-                Log in
-              </button>
-            </p>
-          </section>
-        )}
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { atom } from 'jotai';
-import type { BudgetInfo, CityInfo, DayNightMode, DebugStats, InspectInfo, Notice, ToolPreviewInfo } from '../game/events';
+import type { BudgetInfo, CityInfo, DayNightMode, DebugStats, InspectInfo, Notice, ToolPreviewInfo, UndoOffer } from '../game/events';
 import type { Game } from '../game/Game';
 import type { ToolId } from '../game/tools';
 import type { SaveStatus } from '../save/CitySaver';
@@ -17,6 +17,8 @@ export const gameAtom = atom<Game | null>(null);
 export const fundsAtom = atom(0);
 export const activeToolAtom = atom<ToolId>('select');
 export const toolPreviewAtom = atom<ToolPreviewInfo | null>(null);
+/** The last touch action the Undo bar offers (D-100). */
+export const undoAtom = atom<UndoOffer | null>(null);
 export const noticesAtom = atom<readonly Notice[]>([]);
 
 /** An alert kept in the inbox until the game resolves it or the player dismisses it. */
@@ -66,3 +68,5 @@ export const authProvidersAtom = atom<AuthProviders>({ github: false, emailCodes
 export const authNoticeAtom = atom<string | null>(null);
 /** Save state of the open city; null when it isn't saved at all (the demo). */
 export const saveStatusAtom = atom<SaveStatus | null>(null);
+/** A guest past the trial, or offline too long (D-102): play goes on, saving stops. */
+export const guestSavingPausedAtom = atom(false);

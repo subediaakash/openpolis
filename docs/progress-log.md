@@ -2,6 +2,22 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Atlas memory: 399 → 141 MB (D-103)
+- Measured the atlas by frame family (no painting): buildings ×4 view rotations were 81% of it.
+- `render/atlas/BuildingAtlas.ts`: buildings on their own pages, painted for the current rotation; `Renderer.setRotation` repaints, rebuilds and frees the old pages; `Effects.clearPops()` drops pops drawing from them.
+- `AtlasBuilder`: tallest-first packing; `upload()` sends pages to the GPU and empties their canvases; `repaint()` for a lost WebGL context (`Renderer.onContextRestored`). Overlay frames no longer hold a canvas each.
+- Checked in Chrome (Playwright) on /demo against HEAD: 7 → 4 pages, 399 → 141 MB, boot paint 600 → 299 ms; rotation ~110 → ~240 ms. Four rotations and a forced context loss and restore draw correctly, no page errors (the only 404s are the save server, absent in both). 345 tests pass (demo's timing test failed once under full-suite load, passed alone and on rerun); typecheck and lint clean.
+- **Next:** atlas resolution per device; try it on a real iPhone.
+
+## 2026-11-21: Player experience pass: touch without confirms, undo, road picker (D-100, D-101)
+- **Undo (`sim/undo.ts`):** snapshot the action's tiles (widened to building footprints) before and after; undo restores layers and the same building objects, refunds, and is refused once the city has changed those tiles. 9 tests in `tests/undo.test.ts`, including random edits and undos in a living town checked against every invariant (the checker moved to `tests/support/invariants.ts`).
+- **Touch (D-100):** drags and taps build on release; `UndoBar` (6 s, with a run-out line) replaces D-080's Build / Cancel bar; tools go back to Select after road, rail, clear, place, move and demolish, zones stay picked; placing and moving a building by finger: one finger pans, holding still shows the ghost and price, a tap places (the Undo bar stacks above the picker chip and hides while a picker sheet is open); 10 px slop before a drag leaves its first tile; `game/haptics.ts` (Android); the cost label sits above the finger; the picker chip has ✕; tour and hint wording updated (the tour's road step also counts "back to Select").
+- **Minimap on phones:** − folds it to a round map button, which opens it again.
+- **Desktop road picker (D-101), from a Reddit report on a 14" MBP:** one slim row, options on one line, blurb in the hint: 389 → 148 px; fades while dragging a road.
+- Checked in Chrome (Playwright, touch events) at 390×844 and 844×390: 23 checks each pass (build on release, undo refund, pan in Select, zone stays, clear → Select, chip ✕, pan with a building picked, hold-to-preview, tap-to-place, minimap fold), no page errors. Road picker measured at 1512×780, 1440×760, 1280×680, 1024×640. 345 tests pass; typecheck and lint clean.
+- **Measured for next:** /demo's daily pass is ~40 ms in one frame on this Mac (commute 30 ms avg, 45 max; needs up to 14 ms): phones hitch every game day. Next is 11.3 time-slicing.
+- **Guest trial (D-102, user call):** after 30 minutes play goes on and saving stops (`CitySaver.setPaused`, `guestSavingPausedAtom`); "Not saving" in the top bar opens sign up; the reminder comes back 10 minutes after Later; sign-up resumes saving and moves the city into the account; GitHub sign-in keeps a handoff copy. The pause card and its CSS are gone. 4 saver tests (`tests/citySaver.test.ts`); checked in Chrome with a mocked "gate" server (reminder, Not saving, building still works, clock not stopped, Later, Cmd+S does nothing, status opens sign up).
+
 ## 2026-11-11: UI/UX pass: phones, overlays, loading (D-097, D-098, D-099)
 - **Unblocked startup.** `HEAD` (incidents work) crashed every city on start and failed typecheck: the new Trauma Centre had no art, the three emergency vehicles had no sizes, and `Game.showDay` read the removed `DayOutcome.burned`. Added a trauma-centre recipe (hospital family), liveries and sizes for fire trucks, ambulances and police cars, and `Game.showBurned()` reading `incidents.takeEvents()` (only `burned` is shown; the other incident events are still unused).
 - **Phones and upright tablets (D-097):** slim top bar + More sheet, five-button dock with a zone row, bottom sheets for pickers/inspect/budget, opt-in minimap on phones. Landscape phones share the slim bar (it had overflowed). Rotate prompt removed; manifest orientation `any`. Opaque panels instead of backdrop blur on small/touch screens.

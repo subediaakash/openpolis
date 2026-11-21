@@ -39,7 +39,9 @@ export interface TourStep {
 
 /** Something was built with this kind of tool since the step opened: the world changed and it cost money. */
 function builtWith(isTool: (t: ToolId) => boolean) {
-  return (now: TourSnapshot, start: TourSnapshot) => isTool(now.tool) && now.worldVersion > start.worldVersion && now.funds < start.funds;
+  // On touch a finished road puts the tool away (D-100), so "back to Select from it" counts too.
+  return (now: TourSnapshot, start: TourSnapshot) =>
+    (isTool(now.tool) || (now.tool === 'select' && isTool(start.tool))) && now.worldVersion > start.worldVersion && now.funds < start.funds;
 }
 
 const same = (text: string): TourCopy => ({ mouse: text, touch: text });
@@ -71,7 +73,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     title: 'Draw a road',
     body: {
       mouse: 'Drag across open land to lay a street. Hold Shift for a straight line. The price shows before you let go.',
-      touch: 'Drag across open land to sketch a street, then tap Build. Use two fingers to move the map meanwhile.',
+      touch: 'Drag across open land and lift your finger to lay a street. Undo takes it back. Use two fingers to move the map meanwhile.',
     },
     done: builtWith(isRoadTool),
   },
@@ -87,7 +89,7 @@ export const TOUR_STEPS: readonly TourStep[] = [
     title: 'Paint the zone',
     body: {
       mouse: 'Drag beside your road. Houses grow on zoned land close to a road.',
-      touch: 'Drag beside your road, then tap Build. Houses grow on zoned land close to a road.',
+      touch: 'Drag beside your road and lift your finger. Houses grow on zoned land close to a road.',
     },
     done: builtWith(isZoneTool),
   },

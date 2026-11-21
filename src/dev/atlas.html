@@ -12,8 +12,10 @@
       const t0 = performance.now();
       const tex = buildTerrainTextures();
       const ms = performance.now() - t0;
-      const px = tex.sources.reduce((s, x) => s + x.pixelWidth * x.pixelHeight, 0);
-      document.getElementById('out').textContent = `atlas ${ms.toFixed(0)} ms, ${tex.sources.length} pages, ${(px * 4 / 1048576).toFixed(0)} MB`;
+      // Terrain pages plus the building pages of one view rotation (D-103).
+      const pages = [...tex.sources, ...tex.buildings.sources];
+      const px = pages.reduce((s, x) => s + x.pixelWidth * x.pixelHeight, 0);
+      document.getElementById('out').textContent = `atlas ${ms.toFixed(0)} ms, ${pages.length} pages (${tex.buildings.sources.length} buildings), ${(px * 4 / 1048576).toFixed(0)} MB`;
     </script>
   </body>
 </html>

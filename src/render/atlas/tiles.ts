@@ -1,4 +1,5 @@
 import { Texture, type TextureSource } from 'pixi.js';
+import { BuildingAtlas } from './BuildingAtlas';
 import { BridgeAxis, type BuildableRoad } from '../../sim/roads';
 import { Decor, DECOR_KINDS, GROUND_VARIANTS, Terrain, type DecorId, type TerrainId } from '../../sim/terrain/types';
 import { OVERLAY_TERRAINS } from '../transitions';
@@ -17,7 +18,7 @@ import { BUILDABLE_ROADS } from '../../sim/roadTypes';
 import { AVENUE_STYLES } from './roads/avenueFurniture';
 import { PEDESTRIAN_STYLES } from './roads/pedestrianFurniture';
 import { WIDE_STYLES } from './roads/wideFurniture';
-import { BUILDING_ROTATIONS, buildingFrameSize, buildingVariantCount, paintBuilding } from './buildings';
+import type { BuildingRotation } from './buildings';
 import {
   paintPerson,
   paintVehicle,
@@ -32,7 +33,7 @@ import {
   type RailCarPart,
 } from './agentArt';
 import type { AgentKind } from '../../sim/systems/traffic';
-import { BUILDING_IDS, type BuildingId } from '../../sim/buildings/catalog';
+import type { BuildingId } from '../../sim/buildings/catalog';
 import { CHIP_SIZE, LEAF_SIZE, paintChip, paintLeaf, paintPuff, PUFF_SIZE } from './fxArt';
 import type { FxTextures } from '../fx/Effects';
 import { BEACON_SIZE, BIRD_H, BIRD_W, CLOUD_H, CLOUD_W, DROP_SIZE, GLOW_H, GLOW_W, paintBeacon, paintBird, paintCloudShadow, paintDroplet, paintWindowGlow } from './ambient';
@@ -105,10 +106,10 @@ export interface TerrainTextures {
   /** Construction sites, indexed by footprint size then stage (0 foundation, 1 scaffold). */
   sites: Readonly<Record<SiteSize, readonly Texture[]>>;
   /**
-   * Buildings, indexed by id, variant, then view rotation. Each building has buildingVariantCount(id)
-   * variants (look them up with buildingTexture); frames vary in size: see buildingFrameSize().
+   * Buildings for the current view rotation, on pages of their own (repainted when the view
+   * turns: D-103). Look frames up with buildingTexture; sizes vary: see buildingFrameSize().
    */
-  buildings: Readonly<Record<BuildingId, Texture[][]>>;
+  buildings: BuildingAtlas;
   fx: FxTextures;
   /** Animated details (render/ambient): window glows per wall face, beacons, spray, birds, cloud shadows. */
   ambient: AmbientTextures;
@@ -132,14 +133,15 @@ export interface TerrainTextures {
   bubbles: Readonly<Record<ComplaintKind, Texture>>;
   hover: Texture;
   gridLine: Texture;
-  /** The atlas pages (so their mesh shaders can be released). */
+  /** The terrain atlas pages (so their mesh shaders can be released). Buildings have their own. */
   sources: readonly TextureSource[];
+  /** The terrain atlas itself: uploads the pages and repaints them after a lost context. */
+  atlas: AtlasBuilder;
 }
 
 /** A building instance's frame: its variant wraps round the building's variant count. */
-export function buildingTexture(tex: TerrainTextures, id: BuildingId, variant: number, rotation: number): Texture {
-  const set = tex.buildings[id];
-  return set[variant % set.length][rotation];
+export function buildingTexture(tex: TerrainTextures, id: BuildingId, variant: number): Texture {
+  return tex.buildings.texture(id, variant);
 }
 
 export interface StreetFurniture {
@@ -204,13 +206,16 @@ function paintToCanvas(w: number, h: number, r: number, paint: FramePainter): HT
   return c;
 }
 
-/** A painter that blits pixel data (already at atlas resolution) 1:1. */
-function blitImage(img: ImageData): FramePainter {
-  const c = document.createElement('canvas');
-  c.width = img.width;
-  c.height = img.height;
-  c.getContext('2d')!.putImageData(img, 0, 0);
-  return (ctx, w, h) => ctx.drawImage(c, 0, 0, w, h);
+/**
+ * A painter that puts pixel data (already at atlas resolution) 1:1 at the frame's corner.
+ * The pixels are made when the page paints, not kept: the atlas keeps its painters for
+ * repainting after a lost context (D-103), and a canvas per frame would stay alive with them.
+ */
+function blitImage(make: () => ImageData): FramePainter {
+  return (ctx) => {
+    const t = ctx.getTransform();
+    ctx.putImageData(make(), Math.round(t.e), Math.round(t.f));
+  };
 }
 
 function paintHover(ctx: CanvasRenderingContext2D) {
@@ -354,8 +359,8 @@ const OVERLAY_SOURCE_GROW = 3;
 
 const range = <T>(n: number, f: (i: number) => T): T[] => Array.from({ length: n }, (_, i) => f(i));
 
-/** Paint every terrain frame procedurally and pack them into one atlas. */
-export function buildTerrainTextures(): TerrainTextures {
+/** Paint every terrain frame procedurally and pack them into one atlas; buildings for view rotation `rotation`. */
+export function buildTerrainTextures(rotation: BuildingRotation = 0): TerrainTextures {
   const b = new AtlasBuilder(2);
   const r = b.resolution;
   const W = GROUND_FRAME_W;
@@ -377,13 +382,16 @@ export function buildTerrainTextures(): TerrainTextures {
       // Painted oversized so the masked copy is fully opaque right up to the cell edge.
       const src = paintToCanvas(W, H, r, (ctx) => paintGround(ctx, t, w % GROUND_VARIANTS, 0, OVERLAY_SOURCE_GROW));
       const img = src.getContext('2d')!.getImageData(0, 0, src.width, src.height);
-      for (let m = 1; m < 15; m++) b.add(`ov_${t}_${w}_${m}`, W, H, blitImage(maskedOverlay(img, r, m, w, shape)));
+      // Free the scratch canvas now rather than at the next GC (iOS counts canvas memory).
+      src.width = 0;
+      src.height = 0;
+      for (let m = 1; m < 15; m++) b.add(`ov_${t}_${w}_${m}`, W, H, blitImage(() => maskedOverlay(img, r, m, w, shape)));
     }
   }
   const fw = Math.ceil(W * r);
   const fh = Math.ceil(H * r);
   for (let w = 0; w < WOBBLE_VARIANTS; w++) {
-    for (let m = 1; m < 15; m++) b.add(`foam_${w}_${m}`, W, H, blitImage(foamOverlay(fw, fh, r, m, w)));
+    for (let m = 1; m < 15; m++) b.add(`foam_${w}_${m}`, W, H, blitImage(() => foamOverlay(fw, fh, r, m, w)));
   }
 
   for (const d of [1, 2, 3] as const) {
@@ -409,12 +417,6 @@ export function buildTerrainTextures(): TerrainTextures {
   for (const size of SITE_SIZES) {
     const f = siteFrameSize(size);
     for (const stage of SITE_STAGES) b.add(`site_${size}_${stage}`, f.w, f.h, (ctx) => paintSite(ctx, size, stage));
-  }
-  for (const id of BUILDING_IDS) {
-    for (let v = 0; v < buildingVariantCount(id); v++) {
-      const f = buildingFrameSize(id, v);
-      for (const r of BUILDING_ROTATIONS) b.add(`bld_${id}_${v}_${r}`, f.w, f.h, (ctx) => paintBuilding(ctx, id, v, r, { record: true }));
-    }
   }
   for (const k of VEHICLE_KINDS) {
     for (let v = 0; v < VEHICLE_VARIANTS; v++) {
@@ -490,12 +492,7 @@ export function buildTerrainTextures(): TerrainTextures {
     selection: get('selection'),
     zoneLot: get('zone_lot'),
     sites: { 1: SITE_STAGES.map((st) => get(`site_1_${st}`)), 2: SITE_STAGES.map((st) => get(`site_2_${st}`)) },
-    buildings: Object.fromEntries(
-      BUILDING_IDS.map((id) => [
-        id,
-        range(buildingVariantCount(id), (v) => BUILDING_ROTATIONS.map((r) => get(`bld_${id}_${v}_${r}`))),
-      ]),
-    ) as Record<BuildingId, Texture[][]>,
+    buildings: new BuildingAtlas(rotation, r),
     vehicles: Object.fromEntries(
       VEHICLE_KINDS.map((k) => [k, range(VEHICLE_VARIANTS, (v) => range(4, (d) => get(`veh_${k}_${v}_${d}`)))]),
     ) as Record<Exclude<AgentKind, 'person'>, Texture[][]>,
@@ -530,6 +527,7 @@ export function buildTerrainTextures(): TerrainTextures {
     hover: get('hover'),
     gridLine: get('grid'),
     sources: b.sources,
+    atlas: b,
   };
 }
 

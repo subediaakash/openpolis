@@ -1,8 +1,13 @@
-import { atom, useAtomValue } from 'jotai';
+import { atom, useAtom, useAtomValue } from 'jotai';
 import { useEffect, useRef, type PointerEvent } from 'react';
-import { minimapToViewTile, paintMinimap, viewTileToMinimap, type MinimapLayout } from '../../render/minimap';
+import {
+  minimapToViewTile,
+  paintMinimap,
+  viewTileToMinimap,
+  type MinimapLayout,
+} from '../../render/minimap';
 import { gameAtom, worldVersionAtom } from '../atoms';
-import { PHONE, useMedia } from '../mobile/useMedia';
+import { COMPACT, PHONE, useMedia } from '../mobile/useMedia';
 
 const SHOWN_KEY = 'openpolis.minimapOnPhone';
 
@@ -20,9 +25,9 @@ function readShown(): boolean {
 const shownBaseAtom = atom(readShown());
 
 /**
- * Whether upright phones and tablets show the minimap (D-097): off at first on phones, since it
- * covers a lot of a small screen; the More sheet toggles it, and the choice is remembered.
- * Other layouts always show it.
+ * Whether phones show the minimap (D-097, D-100): off at first on upright phones, since it covers
+ * a lot of a small screen. Its − button folds it into a small map button (and the More sheet
+ * toggles it on upright screens); the choice is remembered. Desktop layouts always show it.
  */
 export const minimapShownAtom = atom(
   (get) => get(shownBaseAtom),
@@ -44,11 +49,30 @@ const REPAINT_MS = 250;
 /** Bottom-right overview of the whole city: click or drag to move the camera. */
 export function Minimap() {
   const phone = useMedia(PHONE);
-  const shownOnPhone = useAtomValue(minimapShownAtom);
-  return phone && !shownOnPhone ? null : <MinimapView />;
+  const compact = useMedia(COMPACT);
+  const [shown, setShown] = useAtom(minimapShownAtom);
+  const foldable = phone || compact;
+  if (foldable && !shown) {
+    return (
+      <button
+        type="button"
+        className="panel minimap-pill"
+        aria-label="Show the minimap"
+        onClick={() => setShown(true)}
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+          <g fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+            <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z" />
+            <path d="M9 4v13M15 7v13" />
+          </g>
+        </svg>
+      </button>
+    );
+  }
+  return <MinimapView onFold={foldable ? () => setShown(false) : null} />;
 }
 
-function MinimapView() {
+function MinimapView({ onFold }: { onFold: (() => void) | null }) {
   const game = useAtomValue(gameAtom);
   const version = useAtomValue(worldVersionAtom);
   const mapRef = useRef<HTMLCanvasElement>(null);
@@ -136,6 +160,18 @@ function MinimapView() {
         onPointerUp={() => (dragging.current = false)}
         onPointerCancel={() => (dragging.current = false)}
       />
+      {onFold && (
+        <button
+          type="button"
+          className="minimap-fold"
+          aria-label="Minimise the minimap"
+          onClick={onFold}
+        >
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path d="M4 8h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

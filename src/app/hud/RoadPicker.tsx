@@ -9,7 +9,7 @@ import {
   type RoadToolId,
 } from '../../game/tools';
 import { PAVEMENTS, ROAD_SPECS, type PavementStyle } from '../../sim/roadTypes';
-import { activeToolAtom, gameAtom, pavementAtom, flyoverAtom } from '../atoms';
+import { activeToolAtom, gameAtom, pavementAtom, flyoverAtom, toolPreviewAtom } from '../atoms';
 import { PickerChip, usePickerFold } from './pickerFold';
 
 /** One line under each road's name (docs/specs/transport.md). */
@@ -169,9 +169,10 @@ function RoadPickerPanel() {
   const tool = useAtomValue(activeToolAtom);
   const pavement = useAtomValue(pavementAtom);
   const flyover = useAtomValue(flyoverAtom);
+  // While a road is being dragged the picker fades out of its way (the canvas holds the pointer).
+  const dragging = useAtomValue(toolPreviewAtom) !== null;
   const fold = usePickerFold();
   const spec = isRoadTool(tool) ? ROAD_SPECS[ROAD_TOOLS[tool]] : null;
-  if (fold.drafting) return null;
   if (fold.folded && isRoadTool(tool) && spec) {
     return (
       <PickerChip
@@ -184,12 +185,17 @@ function RoadPickerPanel() {
         name={spec.name}
         cost={`$${(spec.cost * spec.width).toLocaleString()}/tile`}
         onChange={fold.unfold}
+        onClose={() => game?.setTool('select')}
       />
     );
   }
 
   return (
-    <div className="panel road-picker" role="dialog" aria-label="Choose a road">
+    <div
+      className={`panel road-picker ${dragging ? 'is-dragging' : ''}`}
+      role="dialog"
+      aria-label="Choose a road"
+    >
       <div className="road-cards">
         {ROAD_TOOL_IDS.map((id) => {
           const s = ROAD_SPECS[ROAD_TOOLS[id]];
@@ -231,7 +237,13 @@ function RoadPickerPanel() {
           onClick={() => game?.setTool('rail')}
           title="Rail: trains between stations take commuters off the roads. Crosses streets at right angles. Needs the Rapid transit research in new cities."
         >
-          <svg viewBox="0 0 40 24" width="56" height="34" aria-hidden="true" className="road-section">
+          <svg
+            viewBox="0 0 40 24"
+            width="56"
+            height="34"
+            aria-hidden="true"
+            className="road-section"
+          >
             <rect x="4" y="9" width="32" height="6" rx="1" fill="#968b79" />
             {[7, 12, 17, 22, 27, 32].map((x) => (
               <rect key={x} x={x} y="8" width="2" height="8" fill="#6e4b30" />
@@ -248,60 +260,77 @@ function RoadPickerPanel() {
           </span>
         </button>
       </div>
-      {spec && spec.width === 1 && spec.cars && (
-        <div className="pavement-row" role="radiogroup" aria-label="Where this road crosses another">
-          <span className="pavement-label">At crossings</span>
-          <button type="button" role="radio" aria-checked={!flyover} className={`pavement-chip ${!flyover ? 'is-active' : ''}`} onClick={() => game?.setFlyover(false)}>
-            Junction
-          </button>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={flyover}
-            className={`pavement-chip ${flyover ? 'is-active' : ''}`}
-            onClick={() => game?.setFlyover(true)}
-            title={`Carry this road over the roads it crosses at right angles: no lights, no waiting. +$${BALANCE.flyoverCost} a crossing`}
+      <div className="road-options">
+        {spec && spec.width === 1 && spec.cars && (
+          <div
+            className="pavement-row"
+            role="radiogroup"
+            aria-label="Where this road crosses another"
           >
-            Flyover
-          </button>
-        </div>
-      )}
-      {spec?.pavement && (
-        <div className="pavement-row" role="radiogroup" aria-label="Footpath paving">
-          <span className="pavement-label">Paving</span>
-          <button
-            type="button"
-            role="radio"
-            aria-checked={pavement === 0}
-            className={`pavement-chip ${pavement === 0 ? 'is-active' : ''}`}
-            onClick={() => game?.setPavement(0)}
-          >
-            <i style={{ background: PAVEMENT_SWATCH[spec.pavement] }} />
-            Default
-          </button>
-          {PAVEMENTS.map((p, k) => (
+            <span className="pavement-label">At crossings</span>
             <button
-              key={p}
               type="button"
               role="radio"
-              aria-checked={pavement === k + 1}
-              className={`pavement-chip ${pavement === k + 1 ? 'is-active' : ''}`}
-              onClick={() => game?.setPavement(k + 1)}
+              aria-checked={!flyover}
+              className={`pavement-chip ${!flyover ? 'is-active' : ''}`}
+              onClick={() => game?.setFlyover(false)}
             >
-              <i style={{ background: PAVEMENT_SWATCH[p] }} />
-              {PAVEMENT_LABEL[p]}
+              Junction
             </button>
-          ))}
-        </div>
-      )}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={flyover}
+              className={`pavement-chip ${flyover ? 'is-active' : ''}`}
+              onClick={() => game?.setFlyover(true)}
+              title={`Carry this road over the roads it crosses at right angles: no lights, no waiting. +$${BALANCE.flyoverCost} a crossing`}
+            >
+              Flyover
+            </button>
+          </div>
+        )}
+        {spec?.pavement && (
+          <div className="pavement-row" role="radiogroup" aria-label="Footpath paving">
+            <span className="pavement-label">Paving</span>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={pavement === 0}
+              className={`pavement-chip ${pavement === 0 ? 'is-active' : ''}`}
+              onClick={() => game?.setPavement(0)}
+            >
+              <i style={{ background: PAVEMENT_SWATCH[spec.pavement] }} />
+              Default
+            </button>
+            {PAVEMENTS.map((p, k) => (
+              <button
+                key={p}
+                type="button"
+                role="radio"
+                aria-checked={pavement === k + 1}
+                className={`pavement-chip ${pavement === k + 1 ? 'is-active' : ''}`}
+                onClick={() => game?.setPavement(k + 1)}
+              >
+                <i style={{ background: PAVEMENT_SWATCH[p] }} />
+                {PAVEMENT_LABEL[p]}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <p className="road-hint">
+        {isRoadTool(tool) && (
+          <strong className="road-hint-what">
+            {ROAD_SPECS[ROAD_TOOLS[tool]].name}: {BLURB[tool]}.{' '}
+          </strong>
+        )}
         {!spec
           ? 'Drag to lay track (Shift for straight). It crosses streets at right angles and bridges water in straight runs. Build a Train Station beside it (Civic → Services).'
           : spec.width === 2
-          ? 'Drag in a straight line: the row you drag carries traffic your way, the row beside it comes back. Drag over a road to upgrade it.'
-          : tool === 'ramp'
-            ? 'Join an expressway to local roads with a ramp; nothing else connects to an expressway.'
-            : 'Drag to build (Shift for straight). Drag a bigger road over a smaller one to upgrade it, paying the difference.'}
+            ? 'Drag in a straight line: the row you drag carries traffic your way, the row beside it comes back. Drag over a road to upgrade it.'
+            : tool === 'ramp'
+              ? 'Join an expressway to local roads with a ramp; nothing else connects to an expressway.'
+              : 'Drag to build (Shift for straight). Drag a bigger road over a smaller one to upgrade it, paying the difference.'}
       </p>
     </div>
   );
