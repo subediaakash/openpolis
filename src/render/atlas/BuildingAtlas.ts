@@ -2,6 +2,8 @@ import type { CanvasSource, Texture } from 'pixi.js';
 import { BUILDING_IDS, type BuildingId } from '../../sim/buildings/catalog';
 import { AtlasBuilder, type TextureUploader } from './AtlasBuilder';
 import { buildingFrameSize, buildingVariantCount, paintBuilding, type BuildingRotation } from './buildings';
+import { GAME_GRADE } from './theme/buildingPalettes';
+import { graded } from './theme/grade';
 
 /**
  * Every building frame for one view rotation, on pages of its own (D-104).
@@ -65,7 +67,7 @@ export class BuildingAtlas {
     for (const id of BUILDING_IDS) {
       for (let v = 0; v < buildingVariantCount(id); v++) {
         const f = buildingFrameSize(id, v);
-        b.add(`bld_${id}_${v}`, f.w, f.h, (ctx) => paintBuilding(ctx, id, v, r, { record: true }));
+        b.add(`bld_${id}_${v}`, f.w, f.h, graded(GAME_GRADE, (ctx) => paintBuilding(ctx, id, v, r, { record: true })));
       }
     }
     const tex = b.build();

@@ -7,13 +7,17 @@ import { halo } from '../../modern/parts';
 import { rect, superellipse, type Pt } from '../../modern/plans';
 import { bands, glass, solid } from '../../modern/skins';
 import { vault } from '../../modern/vault';
+import { GAME_PALETTE } from '../../theme/buildingPalettes';
+
+const SIGNS = GAME_PALETTE.town.signs;
 
 /**
  * 2×2 train station (docs/specs/evolution.md, E7b; restyled D-096): 3 distinct architectural
  * designs × 4 track orientations (`side = variant % 4`, `style = Math.floor(variant / 4) % 3`).
  * - Style 0: Modern glass barrel-vault concourse with white wave roof & red RAIL pylon.
  * - Style 1: Grand heritage brick & limestone station with clock tower, pitched slate roof & green METRO pylon.
- * - Style 2: High-speed cyan-and-steel terminal with cantilevered ribbed glass hall & blue EXPRESS pylon.
+ * - Style 2: High-speed glass-and-steel terminal with cantilevered ribbed glass hall & EXPRESS pylon.
+ * Pylons and the terminal roof take the theme's sign colours (D-107).
  */
 
 export const TRAIN_STATION_STYLES = 3;
@@ -35,7 +39,7 @@ export function paintTrainStation(iso: IsoFrame, o: Orient, rng: Rng, variant: n
   const platform = o.rect(s.platform);
   iso.solid(platform, 0, 3, style === 1 ? '#a89f90' : '#b9b3a6', style === 1 ? '#d8cfc0' : '#e2ddd2');
   const edge = o.rect(s.edge);
-  iso.floor(edge.u0, edge.u1, edge.v0, edge.v1, 3.05, style === 2 ? '#38bdf8' : '#f2c94c');
+  iso.floor(edge.u0, edge.u1, edge.v0, edge.v1, 3.05, '#f2c94c');
 
   const items: Item[] = [];
   const h = s.hall;
@@ -63,7 +67,7 @@ export function paintTrainStation(iso: IsoFrame, o: Orient, rng: Rng, variant: n
       } else if (style === 2) {
         // High-speed sleek cyan-glass concourse with sweeping twin-tier roof.
         prism(iso, o, hallAt, superellipse(hw, hd, 5, 28), 0, 18, glass({ tint: '#5da6cf', frame: '#e6edf4', floorH: 9, mullion: 0.12, lights: true }), '#d6e2ec');
-        vault(iso, o, { u0: h.u0 - 0.08, u1: h.u1 + 0.08, v0: h.v0 - 0.08, v1: h.v1 + 0.08 }, along ? 'v' : 'u', 18, 7, solid('#2872b0'), '#469be0');
+        vault(iso, o, { u0: h.u0 - 0.08, u1: h.u1 + 0.08, v0: h.v0 - 0.08, v1: h.v1 + 0.08 }, along ? 'v' : 'u', 18, 7, solid(SIGNS[2][0]), SIGNS[2][1]);
       } else {
         prism(iso, o, hallAt, superellipse(hw, hd, 7, 28), 0, 16, bands({ wall: '#f6f7f9', tint: '#3d6b8c', floorH: 16, glazed: 0.78 }), null);
         vault(iso, o, { u0: h.u0 - 0.06, u1: h.u1 + 0.06, v0: h.v0 - 0.06, v1: h.v1 + 0.06 }, along ? 'v' : 'u', 16, 6, solid('#f3f5f7'), '#cdd5dc');
@@ -88,7 +92,7 @@ export function paintTrainStation(iso: IsoFrame, o: Orient, rng: Rng, variant: n
       if (style === 1) {
         vault(iso, o, shed, along ? 'u' : 'v', 12.5, 7, solid('#5b6875'), '#d8cfc0');
       } else if (style === 2) {
-        vault(iso, o, shed, along ? 'u' : 'v', 12.5, 8.5, glass({ tint: '#54a6d8', frame: '#dce6f0', floorH: 0, mullion: 0.12, lights: false }), '#38bdf8');
+        vault(iso, o, shed, along ? 'u' : 'v', 12.5, 8.5, glass({ tint: '#54a6d8', frame: '#dce6f0', floorH: 0, mullion: 0.12, lights: false }), SIGNS[2][1]);
       } else {
         vault(iso, o, shed, along ? 'u' : 'v', 12.5, 8, glass({ tint: '#8fb9d4', frame: '#ffffff', floorH: 0, mullion: 0.14, lights: false }), '#ffffff');
       }
@@ -105,8 +109,8 @@ export function paintTrainStation(iso: IsoFrame, o: Orient, rng: Rng, variant: n
   // Forecourt: sign pylon and tree on the street side.
   const street: Pt = along ? [1.82, side === 0 ? 1.82 : 0.18] : [side === 3 ? 1.82 : 0.18, 1.82];
   const pylon = at(o, street[0], street[1]);
-  const pylonAccent = style === 1 ? '#2f8a52' : style === 2 ? '#1f84d6' : '#e2483d';
-  const pylonHalo = style === 1 ? '#58c982' : style === 2 ? '#58c4ff' : '#ff6a5a';
+  // Sign colours from the theme (D-107).
+  const [pylonAccent, pylonHalo] = SIGNS[style % SIGNS.length];
   const pylonText = style === 1 ? 'METRO' : style === 2 ? 'HSR' : 'RAIL';
   items.push({
     depth: pylon.depth,

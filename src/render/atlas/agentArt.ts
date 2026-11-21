@@ -1,4 +1,5 @@
 import type { AgentKind } from '../../sim/systems/traffic';
+import { GAME_PALETTE } from './theme/buildingPalettes';
 import { IsoFrame, shade } from './core';
 import { GROUND_PAD, GROUND_FRAME_H } from './geometry';
 import { HALF_H, HALF_W } from '../../shared/constants';
@@ -18,7 +19,8 @@ export const TRAIN_VARIANTS = 4;
 export const PERSON_VARIANTS = 14;
 
 const CAR_COLORS = ['#d93b3b', '#2f6fd6', '#f2f2ee', '#3a3f48', '#2f9e5a', '#f08c2e', '#6f4fc9', '#1e8c9e', '#c94b78', '#8d99a6'] as const;
-const BUS_COLORS = ['#f2a922', '#2f7fd6', '#d42f2f', '#2f9e5a', '#1e7fb8', '#7a4fc9', '#e8682c', '#268a78', '#c83e3e', '#469e4a'] as const;
+/** Bus bodies in the theme's colours (D-107). */
+const BUS_COLORS = GAME_PALETTE.town.buses;
 const TRUCK_COLORS = ['#d93b3b', '#2f6fd6', '#f2f2ee', '#3a3f48', '#2f9e5a', '#f08c2e', '#2b5f9e', '#b84434', '#d9a422', '#4c6678'] as const;
 const CONTAINER_COLORS = ['#2665ad', '#c83e32', '#2d8a52', '#d97a26', '#5e4b9e'] as const;
 
@@ -269,16 +271,8 @@ export function paintPerson(ctx: CanvasRenderingContext2D, variant: number, fram
 export const RAIL_CAR_PARTS = ['engine', 'carriage'] as const;
 export type RailCarPart = (typeof RAIL_CAR_PARTS)[number];
 
-const TRAIN_LIVERIES = [
-  // 0: Classic red locomotive + silver/blue commuter carriages
-  { eng: '#c8382f', engStripe: '#f2d24a', car: '#d9dee4', carStripe: '#1f6fb2', roof: '#3a3f46' },
-  // 1: Sleek white-and-blue high-speed bullet train
-  { eng: '#f0f4f8', engStripe: '#1e6ec8', car: '#eef3f7', carStripe: '#1e6ec8', roof: '#c4d0dc' },
-  // 2: Emerald green & cream regional express train
-  { eng: '#26784e', engStripe: '#f2c94c', car: '#e8e4d4', carStripe: '#26784e', roof: '#3e4a44' },
-  // 3: Bright yellow & charcoal urban metro / light-rail train
-  { eng: '#e8b024', engStripe: '#2c323a', car: '#f0c438', carStripe: '#2c323a', roof: '#464d56' },
-] as const;
+/** Train paint from the theme (D-107: theme/buildingPalettes.ts). */
+const TRAIN_LIVERIES = GAME_PALETTE.town.trains;
 
 /**
  * One rail vehicle centred on the tile, facing `dir` (0 NE, 1 SE, 2 SW, 3 NW), in 4 liveries.

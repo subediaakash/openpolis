@@ -1,10 +1,15 @@
 import type { Box, IsoFrame, Orient, Rng } from '../../core';
 import { at, drawItems, pole, type Item } from '../lot';
+import { GAME_PALETTE } from '../../theme/buildingPalettes';
+
+/** Canopies, signs and parked buses in the theme's colours (D-107). */
+const SIGNS = GAME_PALETTE.town.signs;
+const BUSES = GAME_PALETTE.town.buses;
 
 /**
  * 3×3 bus station (docs/specs/evolution.md, "Bus stations"): 3 distinct architectural styles ×
  * 4 street orientations (`side = variant % 4`, `style = Math.floor(variant / 4) % 3`).
- * - Style 0: Modern glass terminal with blue bay canopies & city buses.
+ * - Style 0: Modern glass terminal with theme-coloured bay canopies & city buses.
  * - Style 1: Heritage brick & terracotta regional coach hub with clock tower & pitched canopies.
  * - Style 2: Eco-modern green-roof & solar-canopy intermodal bus hub with electric buses.
  */
@@ -18,11 +23,11 @@ const STYLE_PALETTES = [
     hallRoof: '#9aa4ad',
     fascia: '#f4f6f8',
     fasciaTop: '#5d6b78',
-    canopy: '#2f7fd6',
-    canopyTop: '#5aa2e6',
-    sign: '#1f6fb2',
-    signTop: '#2a85cf',
-    buses: ['#f2a922', '#2f7fd6', '#d93b3b'] as const,
+    canopy: SIGNS[0][0],
+    canopyTop: SIGNS[0][1],
+    sign: SIGNS[0][0],
+    signTop: SIGNS[0][1],
+    buses: [BUSES[0], BUSES[1], BUSES[2]],
   },
   {
     lot: '#cfc4b2',
@@ -34,7 +39,7 @@ const STYLE_PALETTES = [
     canopyTop: '#b57b50',
     sign: '#9e362a',
     signTop: '#c44a3c',
-    buses: ['#d43b3b', '#e8a832', '#356b48'] as const,
+    buses: [BUSES[3], BUSES[2], BUSES[4]],
   },
   {
     lot: '#cfd6ce',
@@ -42,11 +47,11 @@ const STYLE_PALETTES = [
     hallRoof: '#4f8c4a',
     fascia: '#f2f6f2',
     fasciaTop: '#63a85c',
-    canopy: '#228a7c',
-    canopyTop: '#36b09e',
-    sign: '#1e7a6e',
-    signTop: '#2da695',
-    buses: ['#3cb878', '#2aa8b8', '#f2c43a'] as const,
+    canopy: SIGNS[1][0],
+    canopyTop: SIGNS[1][1],
+    sign: SIGNS[1][0],
+    signTop: SIGNS[1][1],
+    buses: [BUSES[1], BUSES[5], BUSES[2]],
   },
 ] as const;
 

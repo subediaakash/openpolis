@@ -1,6 +1,9 @@
 import { HALF_W } from '../../shared/constants';
 import { IsoFrame, shade } from './core';
 import { GROUND_FRAME_H, GROUND_FRAME_W, GROUND_PAD } from './geometry';
+import { GAME_PALETTE } from './theme/buildingPalettes';
+
+const SIGNS = GAME_PALETTE.town.signs;
 
 /** Bus stop shelters (docs/specs/simulation.md): 5 architectural designs × 4 pavement sides. */
 
@@ -44,9 +47,10 @@ export function paintBusStop(ctx: CanvasRenderingContext2D, side: 0 | 1 | 2 | 3,
 
   const s = style % STOP_STYLES;
   const post = s === 2 ? '#6e4c32' : s === 1 ? '#2d333b' : s === 3 ? '#4f6d54' : '#5b636e';
-  const bench = s === 1 ? '#4a5562' : s === 4 ? '#2d6ea8' : '#9a6b3f';
-  const sign = s === 1 ? '#d9483b' : s === 2 ? '#2e6b4a' : s === 3 ? '#3b9454' : s === 4 ? '#0f82b8' : '#2f7fd6';
-  const roof = s === 1 ? '#2e3640' : s === 2 ? '#a84a36' : s === 3 ? '#5a9c4e' : s === 4 ? '#1e68a8' : '#e8ecef';
+  // Signs and accents in the theme's colours (D-107).
+  const bench = s === 1 ? '#4a5562' : s === 4 ? SIGNS[1][0] : '#9a6b3f';
+  const sign = s === 1 ? SIGNS[0][0] : s === 2 ? SIGNS[1][0] : s === 3 ? SIGNS[1][1] : s === 4 ? SIGNS[2][0] : SIGNS[0][0];
+  const roof = s === 1 ? '#2e3640' : s === 2 ? '#a84a36' : s === 3 ? '#5a9c4e' : s === 4 ? SIGNS[1][0] : '#e8ecef';
 
   const parts: Part[] = [
     // Back wall: brick lower wall for heritage (style 2), else full glass panel.
@@ -71,7 +75,7 @@ export function paintBusStop(ctx: CanvasRenderingContext2D, side: 0 | 1 | 2 | 3,
   } else if (s === 4) {
     // BRT ticket kiosk + tall illuminated pylon.
     parts.push(box(0.14, 0.24, 0.15, 0.65, 0, 10, '#d8e0e8', '#a6b2be', '#eef2f6'));
-    parts.push(box(0.77, 0.84, 0.8, 0.96, 0, 22, '#1e68a8', '#154b7a', '#48a8e8'));
+    parts.push(box(0.77, 0.84, 0.8, 0.96, 0, 22, SIGNS[1][0], shade(SIGNS[1][0], -0.25), SIGNS[1][1]));
   } else {
     parts.push(box(0.78, 0.81, 0.85, 0.95, 0, 17, post, shade(post, -0.25), post));
   }
@@ -99,8 +103,8 @@ export function paintBusStop(ctx: CanvasRenderingContext2D, side: 0 | 1 | 2 | 3,
     box(0.26, 0.74, 0.92, 1.08, 13.4, 14.6, '#d9483b', '#a33228', '#ef6356').draw();
   } else if (s === 4) {
     // Bold cantilevered BRT double-layer canopy.
-    box(0.22, 0.76, -0.08, 1.12, 13, 15.2, roof, shade(roof, -0.24), '#3288cc').draw();
-    box(0.24, 0.74, 0.98, 1.14, 13.6, 14.8, '#48d1cc', '#2fa39e', '#72e6e1').draw();
+    box(0.22, 0.76, -0.08, 1.12, 13, 15.2, roof, shade(roof, -0.24), SIGNS[1][1]).draw();
+    box(0.24, 0.74, 0.98, 1.14, 13.6, 14.8, SIGNS[2][1], shade(SIGNS[2][1], -0.2), SIGNS[2][1]).draw();
   } else {
     box(0.27, 0.73, -0.05, 1.05, 13, 15, roof, shade(roof, -0.22), roof).draw();
   }

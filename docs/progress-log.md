@@ -2,6 +2,13 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Terracotta theme for the whole city (D-107)
+- `render/atlas/theme/buildingPalettes.ts`: Terracotta, Harbour and Pastel palettes per building family, plus town colours (train liveries, buses, station signs, grade). `GAME_PALETTE = TERRACOTTA` (user pick).
+- Recipe buildings recolour through `GAME_RECOLOUR` (`buildings/index.ts`); trains, buses, train and bus stations and stop shelters read the town colours; `theme/grade.ts` warms the neutrals of every built atlas frame (buildings, roads, bridges, rail, furniture, stops, vehicles, trains, sites).
+- A `/themes` comparison page was used to pick the theme, then removed at the user's request (palettes kept in `buildingPalettes.ts`).
+- Checked in Chrome: /demo reads warm (terracotta roofs, cream walls, warm paving), glass stays blue; no page errors. Atlas 425 → 452 ms, same memory. 3 new tests (palette keeps form, every palette complete, grade warms greys and leaves glass, signs, white and black). Typecheck, lint and build clean.
+- **Next:** the depth pass (shadows, contact darkening), then the modern redesign family by family, starting with homes.
+
 ## 2026-11-21: /demo as a planned waterfront city (D-106)
 - `src/sim/demo.ts` rewritten round a fixed district plan: density by distance to the river, civic green square, waterfront landmarks, park quarters and house-park lattice, green lanes, avenues instead of highways, services and local centres on patterns, bus stations wherever none reach, gas power in the industrial corner, roads planned as whole runs (bridges).
 - `scripts/demo-report.ts`: builds a demo and prints population, happiness, drags, complaints and AQI.

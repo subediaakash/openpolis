@@ -14,6 +14,7 @@ import { garageAnnex, paintFence, paintSmokestack, stackHeight, stackPositions }
 import { paintMass } from './massing';
 import { ART, type BuildingArt, type CustomArtId, type RecipeId } from './recipes';
 import { paintRooftop } from './rooftop';
+import { applyPalette, GAME_PALETTE } from '../theme/buildingPalettes';
 
 export { BUILDING_ROTATIONS, type BuildingRotation } from '../core';
 export type { SmokeSource } from '../civic/lot';
@@ -41,9 +42,21 @@ export function buildingVariantCount(id: BuildingId): number {
   return isCustom(id) ? CIVIC_ART[id].variants : ART[id].length;
 }
 
+/** Recolours recipes for a building colour theme (theme/buildingPalettes.ts); null keeps each recipe's own colours. */
+export type RecipeRecolour = (art: BuildingArt, id: BuildingId, variant: number) => BuildingArt;
+/** The game's theme (D-107): every recipe building takes its colours from its family's palette. */
+export const GAME_RECOLOUR: RecipeRecolour = (art, id, variant) => applyPalette(art, id, variant, GAME_PALETTE);
+let recolour: RecipeRecolour | null = GAME_RECOLOUR;
+
+/** Set the building colour theme. The atlas must be rebuilt for the city to show it. */
+export function setRecipeRecolour(fn: RecipeRecolour | null) {
+  recolour = fn;
+}
+
 function recipe(id: RecipeId, variant: number): BuildingArt {
   const list = ART[id];
-  return list[variant % list.length];
+  const v = variant % list.length;
+  return recolour ? recolour(list[v], id, v) : list[v];
 }
 
 /** Height above the top of the walls taken by rooftop and tall ground extras (px). */

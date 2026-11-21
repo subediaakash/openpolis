@@ -64,6 +64,8 @@ import {
 import { paintSite, SITE_SIZES, SITE_STAGES, siteFrameSize, type SiteSize } from './constructionArt';
 import { BUBBLE_H, BUBBLE_KINDS, BUBBLE_W, paintBubble } from './bubbleArt';
 import type { ComplaintKind } from '../../sim/systems/needs';
+import { GAME_GRADE } from './theme/buildingPalettes';
+import { graded } from './theme/grade';
 
 const ALL_TERRAINS: readonly TerrainId[] = [
   Terrain.DeepWater,
@@ -364,6 +366,9 @@ const OVERLAY_SOURCE_GROW = 3;
 const range = <T>(n: number, f: (i: number) => T): T[] => Array.from({ length: n }, (_, i) => f(i));
 
 /** Paint every terrain frame procedurally and pack them into one atlas; buildings for view rotation `rotation`. */
+/** Built things paint through the theme's grade (D-107); ground, trees, water and UI marks don't. */
+const built = (paint: (ctx: CanvasRenderingContext2D) => void) => graded(GAME_GRADE, paint);
+
 export function buildTerrainTextures(rotation: BuildingRotation = 0): TerrainTextures {
   const b = new AtlasBuilder(2);
   const r = b.resolution;
@@ -407,42 +412,42 @@ export function buildTerrainTextures(rotation: BuildingRotation = 0): TerrainTex
   }
   for (const t of ROAD_TYPES) {
     for (let v = 0; v < roadVariants(t); v++) {
-      for (let m = 0; m < 16; m++) b.add(`road_${t}_${v}_${m}`, W, H, (ctx) => paintRoad(ctx, t, m, v));
-      for (const axis of [BridgeAxis.X, BridgeAxis.Y]) b.add(`bridge_${t}_${v}_${axis}`, W, BRIDGE_FRAME_H, (ctx) => paintBridge(ctx, t, axis, v));
+      for (let m = 0; m < 16; m++) b.add(`road_${t}_${v}_${m}`, W, H, built((ctx) => paintRoad(ctx, t, m, v)));
+      for (const axis of [BridgeAxis.X, BridgeAxis.Y]) b.add(`bridge_${t}_${v}_${axis}`, W, BRIDGE_FRAME_H, built((ctx) => paintBridge(ctx, t, axis, v)));
     }
   }
-  for (const look of RAIL_LOOKS) for (let m = 0; m < 16; m++) b.add(`rail_${look}_${m}`, W, H, (ctx) => inTileSpace(ctx, () => paintTrack(ctx, m, look)));
-  for (let m = 0; m < 16; m++) b.add(`rail_overpass_${m}`, W, H + OVERPASS_LIFT, (ctx) => paintOverpass(ctx, m));
-  for (const t of ROAD_TYPES) for (const axis of [1, 2] as const) b.add(`deck_${t}_${axis}`, W, H + DECK_LIFT, (ctx) => paintDeck(ctx, t, axis));
-  for (const curve of RAIL_CURVES) for (const m of CORNER_MASKS) b.add(`rail_${curve}_${m}`, W, H, (ctx) => inTileSpace(ctx, () => paintTrackCurve(ctx, m, curve)));
-  for (const [name, piece] of furniturePieces()) b.add(name, FURNITURE_FRAME_W, FURNITURE_FRAME_H, (ctx) => paintFurniture(ctx, piece));
+  for (const look of RAIL_LOOKS) for (let m = 0; m < 16; m++) b.add(`rail_${look}_${m}`, W, H, built((ctx) => inTileSpace(ctx, () => paintTrack(ctx, m, look))));
+  for (let m = 0; m < 16; m++) b.add(`rail_overpass_${m}`, W, H + OVERPASS_LIFT, built((ctx) => paintOverpass(ctx, m)));
+  for (const t of ROAD_TYPES) for (const axis of [1, 2] as const) b.add(`deck_${t}_${axis}`, W, H + DECK_LIFT, built((ctx) => paintDeck(ctx, t, axis)));
+  for (const curve of RAIL_CURVES) for (const m of CORNER_MASKS) b.add(`rail_${curve}_${m}`, W, H, built((ctx) => inTileSpace(ctx, () => paintTrackCurve(ctx, m, curve))));
+  for (const [name, piece] of furniturePieces()) b.add(name, FURNITURE_FRAME_W, FURNITURE_FRAME_H, built((ctx) => paintFurniture(ctx, piece)));
   b.add('selection', W, H, paintSelection);
   b.add('zone_lot', W, H, paintZoneLot);
   for (const size of SITE_SIZES) {
     const f = siteFrameSize(size);
-    for (const stage of SITE_STAGES) b.add(`site_${size}_${stage}`, f.w, f.h, (ctx) => paintSite(ctx, size, stage));
+    for (const stage of SITE_STAGES) b.add(`site_${size}_${stage}`, f.w, f.h, built((ctx) => paintSite(ctx, size, stage)));
   }
   for (const k of VEHICLE_KINDS) {
     for (let v = 0; v < VEHICLE_VARIANTS; v++) {
-      for (let d = 0; d < 4; d++) b.add(`veh_${k}_${v}_${d}`, W, VEHICLE_FRAME_H, (ctx) => paintVehicle(ctx, k, v, d));
+      for (let d = 0; d < 4; d++) b.add(`veh_${k}_${v}_${d}`, W, VEHICLE_FRAME_H, built((ctx) => paintVehicle(ctx, k, v, d)));
     }
   }
   for (const part of RAIL_CAR_PARTS) {
     for (let v = 0; v < TRAIN_VARIANTS; v++) {
-      for (let d = 0; d < 4; d++) b.add(`train_${part}_${v}_${d}`, W, VEHICLE_FRAME_H, (ctx) => paintRailCar(ctx, part, d, v));
+      for (let d = 0; d < 4; d++) b.add(`train_${part}_${v}_${d}`, W, VEHICLE_FRAME_H, built((ctx) => paintRailCar(ctx, part, d, v)));
     }
   }
   for (let v = 0; v < PERSON_VARIANTS; v++) {
     for (let f = 0; f < 2; f++) b.add(`person_${v}_${f}`, PERSON_W, PERSON_H, (ctx) => paintPerson(ctx, v, f));
   }
   for (let style = 0; style < STOP_STYLES; style++) {
-    for (const side of [0, 1, 2, 3] as const) b.add(`stop_${style}_${side}`, STOP_FRAME_W, STOP_FRAME_H, (ctx) => paintBusStop(ctx, side, style));
+    for (const side of [0, 1, 2, 3] as const) b.add(`stop_${style}_${side}`, STOP_FRAME_W, STOP_FRAME_H, built((ctx) => paintBusStop(ctx, side, style)));
   }
   b.add('warn_road', 18, 20, paintWarnRoad);
   b.add('warn_power', 18, 20, paintWarnPower);
   b.add('warn_water', 18, 20, paintWarnWater);
   b.add('tax_coin', 18, 20, paintTaxCoin);
-  b.add('lamp', 7, 16, paintLamp);
+  b.add('lamp', 7, 16, built(paintLamp));
   for (const k of BUBBLE_KINDS) b.add(`bubble_${k}`, BUBBLE_W, BUBBLE_H, (ctx) => paintBubble(ctx, k));
   b.add('fx_puff', PUFF_SIZE, PUFF_SIZE, paintPuff);
   b.add('fx_chip', CHIP_SIZE, CHIP_SIZE, paintChip);
