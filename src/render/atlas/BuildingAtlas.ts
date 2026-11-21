@@ -4,7 +4,7 @@ import { AtlasBuilder, type TextureUploader } from './AtlasBuilder';
 import { buildingFrameSize, buildingVariantCount, paintBuilding, type BuildingRotation } from './buildings';
 
 /**
- * Every building frame for one view rotation, on pages of its own (D-103).
+ * Every building frame for one view rotation, on pages of its own (D-104).
  *
  * Only one rotation is ever on screen, and building frames are about 80% of the art, so
  * painting all four rotations kept most of the atlas in memory for nothing. Turning the

@@ -9,7 +9,7 @@ const CURSOR_GAP = 18;
 /** Space the label needs before it flips to the other side of the cursor. */
 const LABEL_ROOM_X = 220;
 const LABEL_ROOM_Y = 60;
-/** On touch, the label rides this far above the finger, which would hide it (D-100). */
+/** On touch, the label rides this far above the finger, which would hide it (D-101). */
 const FINGER_CLEARANCE = 64;
 
 function verbFor(p: ToolPreviewInfo): string {

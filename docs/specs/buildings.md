@@ -85,7 +85,7 @@ Placeable showpieces in **Parks & Places**. They count as parks for happiness, e
 - The cursor sits on the footprint's centre tile (for 2×2, the tile above-left of centre).
 - The **Clear** tool removes the whole building if any of its tiles is selected (free for now).
 
-## Undo (touch, D-100)
+## Undo (touch, D-101)
 
 On touch screens every action builds when the finger lifts, so the last one can be taken back from the **Undo bar** for 6 seconds (`sim/undo.ts`, driven by `Game`):
 

@@ -17,7 +17,7 @@ const RETRY_MS = 5_000;
 
 export type SaveStatus =
   | { readonly kind: 'new' }
-  /** A guest past the trial (D-102): play goes on, nothing is saved until they sign up. */
+  /** A guest past the trial (D-103): play goes on, nothing is saved until they sign up. */
   | { readonly kind: 'paused' }
   | { readonly kind: 'saving' }
   | { readonly kind: 'saved'; readonly at: number; readonly store: StoreKind }
@@ -53,7 +53,7 @@ export class CitySaver {
   /** savedAt of the newest snapshot this saver put in the journal (0 = none). */
   private journalAt = 0;
   private readonly offWorldChanged: () => void;
-  /** Saving is off (a guest past the trial, D-102): no store writes and no journal. */
+  /** Saving is off (a guest past the trial, D-103): no store writes and no journal. */
   private paused = false;
   private readonly game: Game;
   private readonly opts: CitySaverOptions;
@@ -87,7 +87,7 @@ export class CitySaver {
   }
 
   /**
-   * Stop or resume saving (D-102). Paused, the city keeps running but nothing is written, not even
+   * Stop or resume saving (D-103). Paused, the city keeps running but nothing is written, not even
    * the closing-tab journal. Resuming (the guest signed up or logged in) saves straight away, which
    * moves the city, with everything since the pause, into the account.
    */

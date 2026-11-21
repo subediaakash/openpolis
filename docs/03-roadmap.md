@@ -207,18 +207,18 @@ We focus on **one** terrain and make it look great before adding presets or menu
 
 Mobile first; desktop unchanged unless noted.
 
-- [x] M1 Undo for touch actions: roads, rail, zones, clear, place, move, demolish; refund; refused once the city changed the tiles (`sim/undo.ts`, 9 tests incl. a living-city soak) (D-100)
-- [x] M2 Touch builds when the finger lifts; the Build / Cancel bar is gone (D-100)
-- [x] M3 Back to Select after road, rail, clear, place, move, demolish; zones stay picked (D-100)
+- [x] M1 Undo for touch actions: roads, rail, zones, clear, place, move, demolish; refund; refused once the city changed the tiles (`sim/undo.ts`, 9 tests incl. a living-city soak) (D-101)
+- [x] M2 Touch builds when the finger lifts; the Build / Cancel bar is gone (D-101)
+- [x] M3 Back to Select after road, rail, clear, place, move, demolish; zones stay picked (D-101)
 - [x] M4 ✕ on the picker chip puts the tool away and closes the picker
 - [x] M5 Minimap folds into a map button on phones (− on the minimap)
 - [x] Placing buildings on phones: one finger pans with a building picked, hold shows the ghost, tap places (Move the same)
 - [x] Touch slop (10 px), haptics on Android, cost label above the finger; tour wording updated
-- [x] Desktop road picker: one slim row, 389 → 148 px tall (Reddit report, D-101)
+- [x] Desktop road picker: one slim row, 389 → 148 px tall (Reddit report, D-102)
 - [ ] **Phone lag:** the daily pass costs ~40 ms in one frame on desktop (commute.day 30 ms avg / 45 ms max, needs.day up to 14 ms), so phones freeze ~120–200 ms each game day. Do 11.3 (spread `commute.day` over frames, keeping D-065 determinism) next
-- [x] Guest trial: after 30 minutes play goes on but saving stops until sign-up, with a reminder every 10 minutes (D-102)
+- [x] Guest trial: after 30 minutes play goes on but saving stops until sign-up, with a reminder every 10 minutes (D-103)
 - [ ] Revisit a placement magnifier if touch placement errors persist after undo
-- [x] Atlas memory: buildings painted for the current view rotation only, height-sorted packing, canvases emptied after GPU upload (repainted on a lost context): 399 → 141 MB of GPU texture, 7 → 4 pages (D-103)
+- [x] Atlas memory: buildings painted for the current view rotation only, height-sorted packing, canvases emptied after GPU upload (repainted on a lost context): 399 → 141 MB of GPU texture, 7 → 4 pages (D-104)
 - [ ] Atlas resolution per device (1.5× on phones and low-memory devices, ~141 → ~80 MB); test on a real iPhone
 
 ## Feature Track (user order, D-067)
@@ -255,6 +255,10 @@ Mobile first; desktop unchanged unless noted.
   - [ ] T6 Trams, metro, rail, ferries, transfers
   - [ ] T7 Parks and leisure: central park, water park, botanical garden, Wonderland, stadium
 - [ ] **F. Research tree**: points from universities and research centres; energy, mobility and city branches
+- [ ] **H. Engagement** (user order, 2026-11-21): one feature per branch and PR
+  - [x] H1 City goals → [specs/goals.md](specs/goals.md) (D-100): four optional goals per stage, instant and held, cash rewards and landmarks earned early; Goals panel in a left rail with Citizens say; claim flow; one unlock rule (`sim/unlocks.ts`)
+  - [ ] H2 Incidents you can watch: E3 dispatch along real roads, fire spread, markers and toasts
+  - [ ] H3 Citizen stories and a city newspaper
 
 ## Art Track (runs alongside the phases; D-066)
 

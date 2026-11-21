@@ -14,7 +14,7 @@ interface TrialStatus {
 }
 
 /**
- * Guest trial (D-083, D-102). The server measures play from heartbeats sent while the tab is
+ * Guest trial (D-083, D-103). The server measures play from heartbeats sent while the tab is
  * visible and answers ok, nudge (a reminder they can close) or gate. At the gate play goes on, but
  * **saving stops** until the guest signs up or logs in (then the city, everything since included,
  * moves into the account), and a reminder says so, coming back every few minutes after "Later".

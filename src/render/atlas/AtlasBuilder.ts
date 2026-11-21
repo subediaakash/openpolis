@@ -40,7 +40,7 @@ interface PageSize {
  * Collects procedurally painted frames and shelf-packs them into as few canvas
  * textures ("pages") as possible. Sprites sharing a page batch into one draw call.
  *
- * Memory (D-103): after `upload` the canvases are emptied, so each page lives only on
+ * Memory (D-104): after `upload` the canvases are emptied, so each page lives only on
  * the GPU. The builder keeps the painters, so `repaint` can paint the pages again
  * when a lost WebGL context drops the GPU copies.
  */

@@ -10,7 +10,7 @@ export const GUEST_TRIAL_ON: boolean = import.meta.env.PROD || import.meta.env.V
 
 /** The server counts the time between beats, so they go only while the tab is visible. */
 export const HEARTBEAT_MS = 30_000;
-/** Visible play without the server's say-so before saving pauses (blocking the API doesn't buy unlimited saving, D-102). */
+/** Visible play without the server's say-so before saving pauses (blocking the API doesn't buy unlimited saving, D-103). */
 export const OFFLINE_GRACE_MS = 5 * 60_000;
 
 function read(key: string): string | null {

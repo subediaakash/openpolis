@@ -78,7 +78,7 @@ function saver(store: () => 'local' | 'cloud' = () => 'local') {
   return { g, s, statuses };
 }
 
-describe('CitySaver pause (guest past the trial, D-102)', () => {
+describe('CitySaver pause (guest past the trial, D-103)', () => {
   it('saves nothing while paused: no store write, no journal, status "paused"', async () => {
     const { g, s, statuses } = saver();
     s.setPaused(true);

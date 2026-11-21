@@ -113,7 +113,7 @@ Buildings are entities in a `Map<id, BuildingInstance>`:
 
 ## Rendering & Performance Strategy
 
-1. **Procedural atlas.** At boot we draw every tile and building variant into one or more offscreen canvases and upload them as a texture atlas. One texture means sprites batch into very few draw calls. Buildings have their own pages, painted for the current view rotation only and repainted when the view turns; after upload the canvases are emptied so each page lives only on the GPU, and a lost WebGL context repaints them (D-103).
+1. **Procedural atlas.** At boot we draw every tile and building variant into one or more offscreen canvases and upload them as a texture atlas. One texture means sprites batch into very few draw calls. Buildings have their own pages, painted for the current view rotation only and repainted when the view turns; after upload the canvases are emptied so each page lives only on the GPU, and a lost WebGL context repaints them (D-104).
 2. **Chunking.** The map is split into 16×16 chunks. Ground tiles of each chunk are cached (`cacheAsTexture`) and only re-rendered when a tile in the chunk changes (dirty flag).
 3. **Culling.** Only chunks that intersect the viewport are visible.
 4. **Separate layers:** `ground` (cached chunks), `objects` (trees/buildings, depth-sorted per chunk), `overlay` (cursor, ghost, zone tint) and `fx` (placement puffs, particles).

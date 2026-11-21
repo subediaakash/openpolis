@@ -4,7 +4,7 @@ import type { TilePos } from './roads';
 import type { World } from './World';
 
 /**
- * Undo for the last player action (docs/specs/buildings.md, "Undo"; D-100). Touch builds on
+ * Undo for the last player action (docs/specs/buildings.md, "Undo"; D-101). Touch builds on
  * release, so a slipped finger must be cheap to take back.
  *
  * How: before an action we snapshot every player-editable layer on the tiles it can touch, and

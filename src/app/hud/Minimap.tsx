@@ -25,7 +25,7 @@ function readShown(): boolean {
 const shownBaseAtom = atom(readShown());
 
 /**
- * Whether phones show the minimap (D-097, D-100): off at first on upright phones, since it covers
+ * Whether phones show the minimap (D-097, D-101): off at first on upright phones, since it covers
  * a lot of a small screen. Its − button folds it into a small map button (and the More sheet
  * toggles it on upright screens); the choice is remembered. Desktop layouts always show it.
  */

@@ -6,7 +6,7 @@ import { gameAtom, undoAtom } from '../atoms';
 const UNDO_MS = 6000;
 
 /**
- * After a touch action (D-100): what was done and what it cost, with Undo. Replaces D-080's
+ * After a touch action (D-101): what was done and what it cost, with Undo. Replaces D-080's
  * Build / Cancel bar, so a finger builds on release and only a mistake costs a second tap.
  * It goes by itself after a few seconds; a new action replaces it.
  */

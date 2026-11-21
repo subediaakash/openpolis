@@ -1,6 +1,7 @@
 import { BALANCE } from '../shared/balance';
 import { SIM_TICK_HZ } from '../shared/constants';
 import type { ResearchState } from './research';
+import { emptyGoals, type GoalState } from './goals/state';
 import { emptyIncidents, type IncidentState } from './systems/incidents';
 import { Stage } from './stages';
 import type { World } from './World';
@@ -39,6 +40,8 @@ export class City {
   research: ResearchState = { points: 0, done: 0 };
   /** Fires, thefts and patients in progress, and the vehicles answering them (docs/specs/evolution.md, E3). */
   incidents: IncidentState = emptyIncidents();
+  /** City goals (docs/specs/goals.md): off until the game turns them on for a player city. */
+  goals: GoalState = emptyGoals();
 
   readonly world: World;
 

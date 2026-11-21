@@ -1,5 +1,5 @@
 /**
- * A short buzz on touch actions (D-100), so a finger feels a build land or get refused. Uses the
+ * A short buzz on touch actions (D-101), so a finger feels a build land or get refused. Uses the
  * Vibration API where it exists (Android browsers); elsewhere (iOS Safari, desktops) it does
  * nothing. Only touch actions call it, so mouse play never buzzes.
  */

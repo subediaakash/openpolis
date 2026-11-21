@@ -14,7 +14,7 @@ export interface PickerFold {
 /**
  * Phones (D-097): a picker is for choosing, the map is for placing. Once the player picks a
  * building or road type the picker folds into a chip ("Park $100 · Change · ✕"); ✕ puts the
- * tool away and closes it (D-100). Mount the hook inside a component that mounts when its tool
+ * tool away and closes it (D-101). Mount the hook inside a component that mounts when its tool
  * is picked, so every visit starts unfolded.
  */
 export function usePickerFold(): PickerFold {

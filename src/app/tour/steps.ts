@@ -39,7 +39,7 @@ export interface TourStep {
 
 /** Something was built with this kind of tool since the step opened: the world changed and it cost money. */
 function builtWith(isTool: (t: ToolId) => boolean) {
-  // On touch a finished road puts the tool away (D-100), so "back to Select from it" counts too.
+  // On touch a finished road puts the tool away (D-101), so "back to Select from it" counts too.
   return (now: TourSnapshot, start: TourSnapshot) =>
     (isTool(now.tool) || (now.tool === 'select' && isTool(start.tool))) && now.worldVersion > start.worldVersion && now.funds < start.funds;
 }

@@ -31,7 +31,7 @@ export interface InputCallbacks {
   /** Left button pressed. Return true if the active tool takes the drag; false lets it pan the camera. */
   onPrimaryDown: (screen: ScreenPoint, shift: boolean, touch: boolean) => boolean;
   onPrimaryMove: (screen: ScreenPoint, shift: boolean) => void;
-  /** The drag ended; `touch` when a finger made it (a touch drag builds with an Undo bar, D-100). */
+  /** The drag ended; `touch` when a finger made it (a touch drag builds with an Undo bar, D-101). */
   onPrimaryUp: (screen: ScreenPoint, shift: boolean, touch: boolean) => void;
   /** Right click without dragging: cancel the current tool action. */
   onCancel: () => void;

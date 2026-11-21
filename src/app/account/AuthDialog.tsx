@@ -47,7 +47,7 @@ export function GithubMark() {
 
 /** Leave for GitHub's sign-in page; the server sends the player back to where they were. */
 export function signInWithGithub() {
-  // The open city is kept for the trip, even if a guest's saving is paused (D-102).
+  // The open city is kept for the trip, even if a guest's saving is paused (D-103).
   window.dispatchEvent(new Event(AUTH_HANDOFF_EVENT));
   const returnTo = location.pathname + location.search;
   location.href = `/api/auth/github?returnTo=${encodeURIComponent(returnTo)}`;

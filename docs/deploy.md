@@ -76,7 +76,7 @@ Bun 1.4 (it runs the server's TypeScript directly).
 | `TRUST_PROXY` | `loopback` | How many proxies sit in front: `1` behind one load balancer or HTTPS proxy (Render, Fly, Railway, nginx). Wrong here means every player shares the proxy's address for login limits. |
 | `GUEST_SECRET` | — | **Required in production** (the server won't start without it). Key for guest fingerprints (D-083), 32+ random characters: `openssl rand -base64 48`. Changing it starts every guest's trial over. |
 | `GUEST_NUDGE_MINUTES` | `10` | Guest play before the "back up your city" reminder. |
-| `GUEST_LIMIT_MINUTES` | `30` | Guest play before saving pauses until sign-up or log-in (play goes on, D-102). |
+| `GUEST_LIMIT_MINUTES` | `30` | Guest play before saving pauses until sign-up or log-in (play goes on, D-103). |
 | `BREVO_API_KEY`, `MAIL_FROM` | — | Email codes for sign-up and password reset (below). Without them, production signs up without confirming the email and has no reset; development prints codes to the server console. |
 | `MAIL_FROM_NAME` | `Openpolis` | Sender name on code emails. |
 | `MAIL_DAILY_LIMIT` | `250` | Most code emails per day for the whole server (Brevo's free plan sends 300). |

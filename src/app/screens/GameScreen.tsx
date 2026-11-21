@@ -17,6 +17,7 @@ import { InfoPanel } from '../hud/InfoPanel';
 import { BudgetPanel } from '../hud/BudgetPanel';
 import { TrafficLegend } from '../hud/TrafficLegend';
 import { CitizensPanel } from '../hud/CitizensPanel';
+import { GoalsPanel } from '../hud/GoalsPanel';
 import { Minimap } from '../hud/Minimap';
 import { Notices } from '../hud/Notices';
 import { Toolbar } from '../hud/Toolbar';
@@ -64,7 +65,7 @@ export function GameScreen({ options, cityRef, onSaved, onReroll, onNewCity }: G
     onSavedRef.current = onSaved;
   }, [onSaved]);
 
-  // A guest past the trial keeps playing but stops saving until they sign up (D-102).
+  // A guest past the trial keeps playing but stops saving until they sign up (D-103).
   const savingPaused = useAtomValue(guestSavingPausedAtom);
   useEffect(() => {
     saverRef.current?.setPaused(savingPaused);
@@ -207,7 +208,11 @@ function Hud({ options, onNewCity, onSave, beforeLogout }: HudProps) {
     <>
       <TopBar cityName={options.name} onNewCity={onNewCity} onSave={onSave} beforeLogout={beforeLogout} />
       <DebugOverlay />
-      <CitizensPanel />
+      {/* The left rail stacks the side panels, so each opens without covering the other. */}
+      <div className="hud-rail">
+        <CitizensPanel />
+        <GoalsPanel />
+      </div>
       <Minimap />
       <TrafficLegend />
       <Toolbar />

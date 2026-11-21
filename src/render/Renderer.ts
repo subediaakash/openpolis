@@ -239,7 +239,7 @@ export class Renderer {
     this.timings.atlas = performance.now() - t0;
   }
 
-  /** Send the atlas pages to the GPU and empty their canvases, so only the GPU copy stays (D-103). */
+  /** Send the atlas pages to the GPU and empty their canvases, so only the GPU copy stays (D-104). */
   private uploadArt() {
     const gpu = this.app.renderer.texture;
     this.textures.atlas.upload(gpu);
@@ -347,7 +347,7 @@ export class Renderer {
     const before = worldToTileFloat(cam.x, cam.y);
     const centre = this.view.pointToWorld(before.x, before.y);
     this.viewRef.current = new ViewTransform(this.world.width, this.world.height, r);
-    // Buildings are painted for one rotation only (D-103): paint the new one, rebuild the map on
+    // Buildings are painted for one rotation only (D-104): paint the new one, rebuild the map on
     // it, then free the old pages. Pops still flashing would draw from those pages, so they go.
     const oldPages = this.textures.buildings.setRotation(r);
     this.textures.buildings.upload(this.app.renderer.texture);

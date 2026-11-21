@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { buildingFrameSize, paintBuilding } from '../../render/atlas/buildings';
 import { BUILDINGS, PLACEABLE_IDS, type BuildingDef, type BuildingId, type CivicGroup } from '../../sim/buildings/catalog';
 import type { ZoneToolId } from '../../game/tools';
-import { STAGES, unlockStage, unlockTech } from '../../sim/stages';
-import { TECHS } from '../../sim/research';
+import { unlockStage } from '../../sim/stages';
 import { activeToolAtom, buildingChoiceAtom, cityAtom, fundsAtom, gameAtom } from '../atoms';
 import { PickerChip, usePickerFold } from './pickerFold';
 
@@ -93,18 +92,9 @@ function BuildingPickerPanel() {
     const d: BuildingDef = BUILDINGS[choice];
     return <PickerChip kind="building-picker" picture={<BuildingThumb id={choice} size={36} />} name={d.name} cost={`$${d.cost.toLocaleString()}`} onChange={fold.unfold} onClose={() => game?.setTool('select')} />;
   }
-  // Locked buildings (D-086) come last, greyed, with the stage that unlocks them.
-  const isLocked = (id: BuildingId) => {
-    if (!progress?.locked) return false;
-    const tech = unlockTech(id);
-    return unlockStage(id) > progress.stage || (tech !== null && !progress.techs.includes(tech));
-  };
-  /** What a locked card waits for: a stage, or a research project. */
-  const lockLabel = (id: BuildingId) => {
-    const tech = unlockTech(id);
-    if (progress && unlockStage(id) <= progress.stage && tech) return TECHS.find((t) => t.id === tech)?.name ?? tech;
-    return STAGES[unlockStage(id)].name;
-  };
+  // Locked buildings (D-086) come last, greyed, with what unlocks them (sim/unlocks.ts decides).
+  const lockOf = (id: BuildingId) => progress?.locks[id] ?? null;
+  const isLocked = (id: BuildingId) => lockOf(id) !== null;
   const ids = PLACEABLE_IDS.filter((id) => {
     const d: BuildingDef = BUILDINGS[id];
     return d.group === tab;
@@ -113,20 +103,14 @@ function BuildingPickerPanel() {
   const card = (id: BuildingId) => {
     const d: BuildingDef = BUILDINGS[id];
     const affordable = d.cost <= funds;
-    const locked = isLocked(id);
-    const stage = STAGES[unlockStage(id)];
+    const lock = lockOf(id);
+    const locked = lock !== null;
     return (
       <button
         key={id}
         type="button"
         className={`building-card ${id === choice ? 'is-active' : ''} ${affordable ? '' : 'is-unaffordable'} ${locked ? 'is-locked' : ''}`}
-        title={
-          locked
-            ? unlockTech(id) && progress && unlockStage(id) <= progress.stage
-              ? `Needs the ${lockLabel(id)} research`
-              : `Unlocks when the city becomes a ${stage.name} (${stage.population.toLocaleString()} people and its basics)`
-            : d.description
-        }
+        title={lock ? lock.detail : d.description}
         aria-disabled={locked}
         onClick={() => {
           if (locked) return;
@@ -137,8 +121,8 @@ function BuildingPickerPanel() {
         <BuildingThumb id={id} />
         <span className="card-name">{d.name}</span>
         <span className="card-meta">
-          {locked ? (
-            <span className="card-lock">🔒 {lockLabel(id)}</span>
+          {lock ? (
+            <span className="card-lock">🔒 {lock.short}</span>
           ) : (
             <>
               <span className="card-cost">${d.cost.toLocaleString()}</span>

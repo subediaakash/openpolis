@@ -8,8 +8,8 @@ work session, read **Current Status** below, then the relevant spec.
 | | |
 |---|---|
 | **Current phase** | City evolution (specs/evolution.md): E0 stages ✅, E1 lifestyle ✅, E2 garbage ✅ |
-| **Next phase** | E3 incidents (fire, theft, illness working together), then AQI, Town Hall tax collection, industry materials; server-run cities after (D-085) |
-| **Last updated** | 2026-11-21 (player experience pass: touch + undo, road picker; see the roadmap) |
+| **Next phase** | Engagement track (roadmap H): H1 goals ✅, then H2 incidents you can watch (E3), H3 citizen stories; server-run cities after (D-085) |
+| **Last updated** | 2026-11-21 |
 
 ## Run It
 
@@ -50,6 +50,7 @@ bun run typecheck && bun run lint
 | [specs/energy.md](specs/energy.md) | Power plants, day/night demand, batteries, the tick clock |
 | [specs/transport.md](specs/transport.md) | Road hierarchy, wide roads, flyovers, bridges, public transport, parks |
 | [specs/evolution.md](specs/evolution.md) | City stages and unlocks, lifestyle tiers, hospital, university, garbage |
+| [specs/goals.md](specs/goals.md) | City goals: optional targets per stage, rewards, landmarks earned early |
 | [deploy.md](deploy.md) | Docker image, environment settings, production checklist |
 | [decisions.md](decisions.md) | Decision log (why we chose X over Y) |
 | [progress-log.md](progress-log.md) | Dated log of what got done each session |

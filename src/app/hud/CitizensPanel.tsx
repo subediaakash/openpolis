@@ -1,8 +1,7 @@
 import { useAtomValue } from 'jotai';
-import { useState } from 'react';
-import { SMALL_UI } from '../mobile/useMedia';
 import type { ComplaintKind } from '../../sim/systems/needs';
 import { cityAtom, gameAtom } from '../atoms';
+import { useRememberedOpen } from './useRememberedOpen';
 
 /** A colour per complaint, matching the speech-bubble icons. */
 const TONE: Readonly<Record<ComplaintKind, string>> = {
@@ -27,17 +26,6 @@ const TONE: Readonly<Record<ComplaintKind, string>> = {
 
 const OPEN_KEY = 'openpolis.citizensOpen';
 
-/** Open or closed, remembered per device; folded by default on phones. */
-function initialOpen(): boolean {
-  try {
-    const saved = localStorage.getItem(OPEN_KEY);
-    if (saved !== null) return saved === '1';
-  } catch {
-    // Storage blocked (private mode): fall back to the screen-size default.
-  }
-  return !window.matchMedia(SMALL_UI).matches;
-}
-
 /**
  * "Citizens say…": the city's top complaints and requests, each with a button that shows where.
  * Always on screen as a sticky toggle (user request: it used to vanish whenever the list was
@@ -46,19 +34,10 @@ function initialOpen(): boolean {
 export function CitizensPanel() {
   const city = useAtomValue(cityAtom);
   const game = useAtomValue(gameAtom);
-  const [open, setOpen] = useState(initialOpen);
+  const [open, toggle] = useRememberedOpen(OPEN_KEY);
   if (!city) return null;
   const complaints = city.needs.complaints;
   const total = complaints.reduce((n, c) => n + c.count, 0);
-  const toggle = () =>
-    setOpen((o) => {
-      try {
-        localStorage.setItem(OPEN_KEY, o ? '0' : '1');
-      } catch {
-        // Not remembered this time; the panel still toggles.
-      }
-      return !o;
-    });
   return (
     <aside className={`panel citizens ${open ? 'is-open' : ''}`} aria-label="Citizens say">
       <button type="button" className="citizens-header" aria-expanded={open} onClick={toggle}>

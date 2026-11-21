@@ -107,7 +107,7 @@ export interface TerrainTextures {
   sites: Readonly<Record<SiteSize, readonly Texture[]>>;
   /**
    * Buildings for the current view rotation, on pages of their own (repainted when the view
-   * turns: D-103). Look frames up with buildingTexture; sizes vary: see buildingFrameSize().
+   * turns: D-104). Look frames up with buildingTexture; sizes vary: see buildingFrameSize().
    */
   buildings: BuildingAtlas;
   fx: FxTextures;
@@ -209,7 +209,7 @@ function paintToCanvas(w: number, h: number, r: number, paint: FramePainter): HT
 /**
  * A painter that puts pixel data (already at atlas resolution) 1:1 at the frame's corner.
  * The pixels are made when the page paints, not kept: the atlas keeps its painters for
- * repainting after a lost context (D-103), and a canvas per frame would stay alive with them.
+ * repainting after a lost context (D-104), and a canvas per frame would stay alive with them.
  */
 function blitImage(make: () => ImageData): FramePainter {
   return (ctx) => {

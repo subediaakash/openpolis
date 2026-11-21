@@ -2,7 +2,7 @@ import { BALANCE } from '../shared/balance';
 import { BUILDINGS, buildingDef, footprintOrigin, type BuildingDef, type BuildingId } from './buildings/catalog';
 import type { City } from './City';
 import { ROAD_SPECS, roadSpec } from './roadTypes';
-import { isUnlocked } from './stages';
+import { isUnlocked } from './unlocks';
 import { isRail, Rail, railMask, railUnlocked, roadSide, trackSide, type RailId } from './rail';
 import { DIRS, BridgeAxis, roadMask, RoadType, type BridgeAxisId, type BuildableRoad, type TilePos } from './roads';
 import { Decor, Terrain } from './terrain/types';

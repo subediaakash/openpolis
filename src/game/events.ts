@@ -11,6 +11,7 @@ import type { StageRequirement } from '../sim/progression';
 import type { Stage } from '../sim/stages';
 import type { AirReport } from '../sim/systems/air';
 import type { TechId } from '../sim/research';
+import type { GoalId } from '../sim/goals/catalog';
 import type { MaterialsReport } from '../sim/systems/materials';
 import type { ToolId } from './tools';
 
@@ -47,7 +48,7 @@ export interface GameEventMap {
   budget: BudgetInfo;
   /** Building shown in the info panel, or null when it's closed. */
   inspect: InspectInfo | null;
-  /** A touch action that can still be undone, or null once it can't (D-100). */
+  /** A touch action that can still be undone, or null once it can't (D-101). */
   undo: UndoOffer | null;
 }
 
@@ -79,6 +80,40 @@ export interface CityInfo {
   progress: ProgressInfo;
   /** Residents' average AQI and the worst area's (docs/specs/evolution.md, E4). */
   air: AirReport;
+  /** City goals (docs/specs/goals.md); null when the city doesn't track them (/demo). */
+  goals: GoalsInfo | null;
+}
+
+export interface GoalsInfo {
+  /** Goals to work on or claim: ready ones first, then by stage and catalog order. */
+  readonly active: readonly GoalInfo[];
+  readonly ready: number;
+  readonly claimed: number;
+  readonly total: number;
+}
+
+export interface GoalInfo {
+  readonly id: GoalId;
+  readonly title: string;
+  readonly hint: string;
+  /** The stage it belongs to. */
+  readonly stageName: string;
+  readonly status: 'open' | 'ready';
+  /** 0..1 toward the condition (held goals: toward the days needed while it holds). */
+  readonly have: number;
+  /** "320 / 500 residents"; held goals add the day count. */
+  readonly detail: string;
+  /** Held goals: days needed in a row and days so far; null for instant goals. */
+  readonly held: { readonly days: number; readonly streak: number } | null;
+  readonly reward: { readonly funds: number; readonly unlock: string | null };
+}
+
+/** Why a building can't be placed yet, as the picker and toasts word it. */
+export interface LockInfo {
+  /** On the card: "Town", "Town or goal", "Rapid transit". */
+  readonly short: string;
+  /** Tooltip and toast. */
+  readonly detail: string;
 }
 
 export interface ProgressInfo {
@@ -93,6 +128,8 @@ export interface ProgressInfo {
   research: { current: { name: string; effect: string; points: number; needed: number } | null; done: readonly string[]; rate: number } | null;
   /** Finished research projects (some buildings need one, e.g. stations need Rapid transit). */
   techs: readonly TechId[];
+  /** Placeable buildings the city can't build yet, and why (sim/unlocks.ts). */
+  locks: Readonly<Partial<Record<BuildingId, LockInfo>>>;
 }
 
 export interface BudgetInfo {
@@ -194,7 +231,7 @@ export interface ToolPreviewInfo {
   note: string | null;
 }
 
-/** The last touch action, which the Undo bar can take back (D-100). */
+/** The last touch action, which the Undo bar can take back (D-101). */
 export interface UndoOffer {
   /** Changes with every new action, so the bar restarts its timer. */
   readonly id: number;

@@ -16,13 +16,17 @@ import { buildingDef, isPlaceable, Lifestyle, type BuildingInstance } from '../s
 import { Simulation } from '../sim/core/Simulation';
 import type { DayOutcome } from '../sim/core/System';
 import { findEntrance } from '../sim/systems/access';
-import { nextStage, STAGES, unlockedAt, unlockStage, unlockTech } from '../sim/stages';
+import { nextStage, STAGES, unlockedAt } from '../sim/stages';
+import type { GoalId } from '../sim/goals/catalog';
+import { claimGoal, emptyGoals } from '../sim/goals/state';
+import { lockOf } from '../sim/unlocks';
 import { stageRequirements } from '../sim/progression';
 import { lifestyleReport } from '../sim/systems/lifestyle';
 import { currentTech, researchRate, TECHS } from '../sim/research';
 import { materialStorage } from '../sim/systems/materials';
 import { collectTaxes, townHall } from '../sim/systems/budget';
 import { inspectInfo } from './inspect';
+import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyMessage } from './goals';
 import { aqiBand } from '../sim/systems/air';
 import { isWaterTerrain } from '../render/transitions';
 import { windFactor } from '../sim/systems/energy';
@@ -104,7 +108,7 @@ const TOOL_LABEL = {
 /** How far a finger must travel (CSS px) before a touch drag leaves its first tile. */
 const TOUCH_SLOP_PX = 10;
 
-/** A touch screen with no hover (phones, tablets): where info-panel actions get the Undo bar (D-100). */
+/** A touch screen with no hover (phones, tablets): where info-panel actions get the Undo bar (D-101). */
 function isTouchScreen(): boolean {
   return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
 }
@@ -155,7 +159,7 @@ export class Game {
   private touchPress: ScreenPoint | null = null;
   /** That finger has turned into a pan: no ghost until it lifts. */
   private touchPanning = false;
-  /** The last touch action, while the Undo bar offers it (D-100). */
+  /** The last touch action, while the Undo bar offers it (D-101). */
   private undoRecord: UndoRecord | null = null;
   private undoId = 0;
   private lastPointer: ScreenPoint | null = null;
@@ -241,6 +245,8 @@ export class Game {
       // ... and build with materials their industry makes (E6), starting with a small yard.
       city.needsMaterials = !opts.demo;
       city.materials = BALANCE.materialsStarting;
+      // ... and give the player goals to aim for at each stage (docs/specs/goals.md).
+      city.goals = emptyGoals(!opts.demo);
       demo = opts.demo ? buildDemoCity(city, opts.terrain.seed) : null;
       sim = new Simulation(city);
       if (demo) sim.worldChanged({ roads: true });
@@ -417,7 +423,7 @@ export class Game {
   private onPrimaryDown(screen: ScreenPoint, shift: boolean, touch: boolean): boolean {
     if (this.toolId === 'select') return false;
     if (touch && (this.toolId === 'build' || this.toolId === 'move')) {
-      // Placing by finger (D-100): one finger pans while you look for a spot, holding still
+      // Placing by finger (D-101): one finger pans while you look for a spot, holding still
       // shows the ghost and price, and a tap (onClick) puts it down. Nothing is dragged.
       this.touchPress = screen;
       this.lastPointer = screen;
@@ -457,7 +463,7 @@ export class Game {
     if (this.drag) this.commitDrag(touch);
   }
 
-  /** A finger tapped the map with Build picked: place the building there, with Undo (D-100). */
+  /** A finger tapped the map with Build picked: place the building there, with Undo (D-101). */
   private placeByTouch(t: TilePos) {
     const p = this.plan(null, t);
     if (!p || p.kind !== 'place') return;
@@ -470,7 +476,7 @@ export class Game {
   }
 
   /**
-   * Build the finished drag. A finger's drag builds on release too (D-100, replacing D-080's
+   * Build the finished drag. A finger's drag builds on release too (D-101, replacing D-080's
    * Build / Cancel bar): it gets an Undo bar instead, and the tool goes back to Select so the
    * next finger pans the map. Zones stay picked, since zoning takes several strokes.
    */
@@ -496,7 +502,7 @@ export class Game {
     this.events.emit('undo', { id: ++this.undoId, label, cost: rec.spent });
   }
 
-  /** The Undo bar's button: take the last touch action back and refund it (D-100). */
+  /** The Undo bar's button: take the last touch action back and refund it (D-101). */
   undo() {
     const rec = this.undoRecord;
     this.undoRecord = null;
@@ -577,16 +583,9 @@ export class Game {
       this.sound.play('error');
       this.notify('error', 'Rail track needs the Rapid transit research (Research Centre, Metropolis stage)');
     } else if (result.reason === 'locked' && p.kind === 'place') {
-      const stage = STAGES[unlockStage(p.plan.building)];
-      const tech = unlockTech(p.plan.building);
-      const name = buildingDef(p.plan.building).name;
+      const lock = lockOf(this.city, p.plan.building);
       this.sound.play('error');
-      this.notify(
-        'error',
-        this.city.stage >= unlockStage(p.plan.building) && tech
-          ? `${name} needs the ${TECHS.find((t) => t.id === tech)?.name ?? tech} research`
-          : `${name} unlocks at ${stage.name} (${stage.population.toLocaleString()} people)`,
-      );
+      if (lock) this.notify('error', lockInfo(lock, p.plan.building).detail);
     }
     // Every path left is a refusal (blocked, no money, locked) or nothing to do.
     const blocked = (p.kind === 'place' || p.kind === 'move') && !p.plan.ok;
@@ -620,6 +619,7 @@ export class Game {
     this.renderer.indicators.setTaxesWaiting(this.city.collectsTaxes && this.city.uncollected > 0, this.world);
     this.renderer.indicators.sync(this.world);
     this.hintUtilities();
+    this.announceGoals();
     if (this.inspected !== null && !this.world.buildings.has(this.inspected)) this.inspect(null);
     this.emitInspect();
     this.emitCity();
@@ -654,6 +654,7 @@ export class Game {
     this.showDay(out);
     this.explainMaterials();
     this.showMilestones(out);
+    this.announceGoals();
     this.explainWaitingZones();
     // Congestion changes every day, even when no buildings did.
     if (out.changed.length === 0) this.refreshDataView();
@@ -692,7 +693,8 @@ export class Game {
       const def = STAGES[out.stage];
       const unlocked = this.city.locked ? unlockedAt(out.stage).map((id) => buildingDef(id).name) : [];
       this.sound.play('build');
-      this.notify('milestone', `Your city is now a ${def.name}!${unlocked.length ? ` New: ${unlocked.join(', ')}.` : ''} ${def.news}`.trim(), `stage-${out.stage}`);
+      const goals = this.city.goals.on ? ' New goals to try.' : '';
+      this.notify('milestone', `Your city is now a ${def.name}!${unlocked.length ? ` New: ${unlocked.join(', ')}.` : ''} ${def.news}${goals}`.trim(), `stage-${out.stage}`);
     }
     if (out.research) {
       this.sound.play('coin');
@@ -703,6 +705,30 @@ export class Game {
     } else if (out.lifestyle === Lifestyle.Prosperous) {
       this.notify('milestone', 'The first homes are Prosperous! They pay the most tax, and they want a university.', 'lifestyle-2');
     }
+  }
+
+  /** Goals that just became ready (after an edit or a day): one toast each, kept in the inbox until claimed. */
+  private announceGoals() {
+    const ready = this.sim.goals.takeReady();
+    if (ready.length === 0) return;
+    this.sound.play('build');
+    for (const id of ready) this.notify('milestone', readyMessage(id), `goal-${id}`);
+  }
+
+  /** Take a ready goal's reward (the Goals panel's Claim button). */
+  claimGoal(id: GoalId) {
+    const result = claimGoal(this.city, id);
+    if (!result.ok) {
+      this.sound.play('error');
+      this.notify('error', claimMessage(result));
+      return;
+    }
+    this.sound.play('coin');
+    this.notify('milestone', claimMessage(result));
+    this.resolve(`goal-${id}`);
+    this.events.emit('funds', this.city.funds);
+    this.emitCity();
+    this.emitBudget();
   }
 
   /**
@@ -1015,6 +1041,7 @@ export class Game {
       people: this.traffic.agents.length - cars,
       progress: this.progressInfo(),
       air: this.sim.air.report,
+      goals: goalsInfo(this.sim),
     });
   }
 
@@ -1029,6 +1056,7 @@ export class Game {
       residents: lifestyleReport(this.city).residents,
       research: this.researchInfo(),
       techs: TECHS.slice(0, this.city.research.done).map((t) => t.id),
+      locks: buildingLocks(this.city),
     };
   }
 
@@ -1105,7 +1133,7 @@ export class Game {
     if (!b) return;
     const { w, h } = BUILDINGS[b.def].size;
     const plan = planClear(this.world, rectTiles({ x: b.x, y: b.y }, { x: b.x + w - 1, y: b.y + h - 1 }));
-    // On touch screens the info panel's Demolish is undoable like any other touch action (D-100).
+    // On touch screens the info panel's Demolish is undoable like any other touch action (D-101).
     const touch = isTouchScreen();
     const cap = touch ? captureUndo(this.city, plan.tiles) : null;
     const changed = this.execute({ kind: 'clear', tool: 'clear', plan }, touch);

@@ -50,7 +50,7 @@ function must(rec: UndoRecord | null): UndoRecord {
   return rec;
 }
 
-describe('undo (D-100)', () => {
+describe('undo (D-101)', () => {
   it('takes back a road and refunds it', () => {
     const { w, city } = grassCity();
     w.tree[w.index(3, 2)] = 2;

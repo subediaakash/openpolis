@@ -13,6 +13,7 @@ import { GarbageSystem } from '../systems/garbage';
 import { MaterialsSystem } from '../systems/materials';
 import { TrainSystem } from '../systems/trains';
 import { LifestyleSystem } from '../systems/lifestyle';
+import { GoalSystem } from '../goals/system';
 import { stageRequirements } from '../progression';
 import { researchDay, techEffects } from '../research';
 import { nextStage, stageFor } from '../stages';
@@ -32,8 +33,8 @@ const SALT = { growth: 0x6077, fire: 0xf12e } as const;
 
 /**
  * The simulation core (D-058): owns the systems and runs them in a fixed order.
- *   - after an edit:  access → utilities → coverage → commute (if roads changed) → air → needs → traffic
- *   - each day:       stage → materials → growth → (the edit refresh) → garbage → commute → air → needs → lifestyle → population → traffic → trains → incidents,
+ *   - after an edit:  access → utilities → coverage → commute (if roads changed) → air → needs → traffic → trains → incidents → goals
+ *   - each day:       stage → materials → growth → (the edit refresh) → garbage → commute → air → needs → lifestyle → population → traffic → trains → incidents → research → goals,
  *                     plus budget (then the garbage month reset) at month end
  *   - each tick:      incidents (vehicles drive, fires burn; a fire that takes a building runs the edit refresh)
  *   - each frame:     the clock, traffic, trains and the emergency vehicles' drawn positions
@@ -55,6 +56,7 @@ export class Simulation {
   readonly materials: MaterialsSystem;
   readonly trains: TrainSystem;
   readonly lifestyle: LifestyleSystem;
+  readonly goals: GoalSystem;
   /** Run after any change to roads or buildings. */
   private readonly onChange: readonly SimSystem[];
   /** Random streams whose state is saved, so a loaded city continues exactly (sim/save.ts). */
@@ -88,8 +90,10 @@ export class Simulation {
     // An unlocked city opens at its stage straight away (the /demo city, old saves), with no toast.
     if (!city.locked) this.followPopulation();
     this.trains = new TrainSystem(world, this.commute);
-    // Incidents last: vehicles re-route on the entrances and roads the others just brought up to date.
-    this.onChange = [this.access, this.utilities, this.coverage, this.commute, this.air, this.needs, this.traffic, this.trains, this.incidents];
+    this.goals = new GoalSystem(city, () => ({ city, needs: this.needs.report, commute: this.commute.report, air: this.air.report }));
+    // Incidents next to last: vehicles re-route on the entrances and roads the others just brought
+    // up to date. Goals last: they read every other system's report.
+    this.onChange = [this.access, this.utilities, this.coverage, this.commute, this.air, this.needs, this.traffic, this.trains, this.incidents, this.goals];
   }
 
   get world(): World {
@@ -124,6 +128,7 @@ export class Simulation {
     t.run('research.day', () => {
       out.research = researchDay(this.city);
     });
+    t.run('goals.day', () => this.goals.onDay());
     if (this.city.day % BALANCE.daysPerMonth === 0) {
       t.run('budget.month', () => this.budget.onMonth(out));
       t.run('garbage.month', () => this.garbage.onMonth());
