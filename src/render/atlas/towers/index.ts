@@ -1,16 +1,17 @@
 import type { CivicArt } from '../civic/lot';
-import { CONDO_TOWER_TOP, CONDO_TOWER_VARIANTS, paintCondoTower } from './condoTower';
-import { HOTEL_TOP, HOTEL_VARIANTS, paintHotel } from './hotel';
-import { OFFICE_TOWER_TOP, OFFICE_TOWER_VARIANTS, paintOfficeTower } from './officeTower';
+import { paintWarmCondo, WARM_CONDO_TOP, WARM_CONDO_VARIANTS } from './warmCondo';
+import { paintWarmHotel, WARM_HOTEL_TOP, WARM_HOTEL_VARIANTS } from './warmHotel';
+import { paintWarmOffice, WARM_OFFICE_TOP, WARM_OFFICE_VARIANTS } from './warmOffice';
 
 /**
- * Modern towers (D-096): zoned high-rises drawn with the modern kit instead of box recipes,
- * one module per building, each variant its own form.
+ * Modern towers (D-096, warm since D-108): zoned high-rises drawn with the modern kit and the
+ * skyscraper kit (skyscraper.ts) instead of box recipes, one module per building.
  */
 export type TowerArtId = 'office_tower' | 'condo_tower' | 'hotel';
 
 export const TOWER_ART: Readonly<Record<TowerArtId, CivicArt>> = {
-  office_tower: { variants: OFFICE_TOWER_VARIANTS, headroom: () => OFFICE_TOWER_TOP, paint: paintOfficeTower },
-  condo_tower: { variants: CONDO_TOWER_VARIANTS, headroom: () => CONDO_TOWER_TOP, paint: paintCondoTower },
-  hotel: { variants: HOTEL_VARIANTS, headroom: () => HOTEL_TOP, paint: paintHotel },
+  // Warm skyscrapers (D-108): base, shaft and crown in limestone, bronze, terracotta and dark glass.
+  office_tower: { variants: WARM_OFFICE_VARIANTS, headroom: () => WARM_OFFICE_TOP, paint: paintWarmOffice },
+  condo_tower: { variants: WARM_CONDO_VARIANTS, headroom: () => WARM_CONDO_TOP, paint: paintWarmCondo },
+  hotel: { variants: WARM_HOTEL_VARIANTS, headroom: () => WARM_HOTEL_TOP, paint: paintWarmHotel },
 };

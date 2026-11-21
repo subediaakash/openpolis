@@ -1,6 +1,7 @@
 import type { EnergyArtId } from '../../energy';
 import type { LandmarkArtId } from '../../landmarks';
 import type { TowerArtId } from '../../towers';
+import type { LowriseArtId } from '../../lowrise';
 import type { BuildingId } from '../../../../sim/buildings/catalog';
 import type { Box } from '../../core';
 
@@ -131,5 +132,6 @@ export type CustomArtId =
   | 'bus_station'
   | EnergyArtId
   | LandmarkArtId
-  | TowerArtId;
+  | TowerArtId
+  | LowriseArtId;
 export type RecipeId = Exclude<BuildingId, CustomArtId>;

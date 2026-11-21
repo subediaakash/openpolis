@@ -2,6 +2,7 @@ import type { CustomArtId } from '../buildings/recipes';
 import { ENERGY_ART } from '../energy';
 import { LANDMARK_ART } from '../landmarks';
 import { TOWER_ART } from '../towers';
+import { LOWRISE_ART } from '../lowrise';
 import { paintRiversideMarket } from './commerce/riversideMarket';
 import { paintShoppingComplex } from './commerce/shoppingComplex';
 import type { CivicArt } from './lot';
@@ -36,4 +37,5 @@ export const CIVIC_ART: Readonly<Record<CustomArtId, CivicArt>> = {
   ...ENERGY_ART,
   ...LANDMARK_ART,
   ...TOWER_ART,
+  ...LOWRISE_ART,
 };

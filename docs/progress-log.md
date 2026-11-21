@@ -2,6 +2,20 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Warm towers and modern homes everywhere (D-109)
+- Towers: 6 office, 4 condo, 3 hotel designs in the skyscraper kit; old glass tower modules deleted.
+- `render/atlas/lowrise/`: kit plus cottage, family house, townhouses, villa, walk-up, apartment block, luxury apartments, small office, creative office; residential and mid-rise office recipes deleted. New skins `tiles`, `roofed`; `stoneGrid` shutters.
+- Fixes found while checking all four rotations: balconies, shop awnings and tower entrances no longer draw over the building when its front faces away; villa palms sort by depth.
+- Checked in Chrome: art gallery for every family (and `?rot=1`), /demo close, mid and wide; atlas 206 MB, 337 ms; no page errors. 370 tests, typecheck, lint and build clean.
+- **Next:** shops (corner shop, café, supermarket), industry (workshop, warehouse, factory) and services in the same kits.
+
+## 2026-11-21: Depth pass and warm skyscrapers, first samples (D-108)
+- Depth pass in `core/light.ts` (two-layer cast shadows, `groundOcclusion`, firmer contact shadows, taller wall-foot occlusion) for every building.
+- Skyscraper kit `towers/skyscraper.ts` (podium, entrance, lantern; warm `TOWER` materials) and skins `modern/towerSkins.ts` (`finGlass`, `stoneGrid`); three warm office towers in `towers/warmOffice.ts`, now the office tower art (old `officeTower.ts` kept for now).
+- /demo: downtown office blocks are redeveloped into towers before the build-out (`redevelop`, `fillLots` skyline); 21 office towers, 96% happy.
+- Checked in Chrome: gallery and /demo; no page errors. 370 tests, typecheck and lint clean.
+- **Next (after user review):** about 6 office and 4 condo towers in this kit, warm hotels, then mid-rise offices, then the modern homes.
+
 ## 2026-11-21: Phone move fix
 - Bug (user report): on phones, after moving a building it looked as if the Move tool was still on. The tool did go back to Select, but the "Moving the …: tap where it should go" toast stayed up for its full time. Now the game takes that toast down as soon as the carry ends (placed, cancelled or another tool): `notify` returns the notice id, new `dismissNotice` event (`game/events.ts`, `bridge.ts`), `Game.endCarry`.
 - Back to Select is now judged by the move happening (`execute` returned true), not by money going down, and the building's panel closes after a move (user call; it used to stay selected, see the earlier HUD entry); the Undo bar is the only thing left on screen.

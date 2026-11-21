@@ -1,5 +1,5 @@
 import { mulberry32, subSeed } from '../shared/rng';
-import { ART_VARIANTS, BUILDINGS, startLevel, zonedBuildings, type BuildingDef, type BuildingId } from './buildings/catalog';
+import { ART_VARIANTS, BUILDINGS, startLevel, zonedBuildings, type BuildingDef, type BuildingId, type BuildingInstance } from './buildings/catalog';
 import { BALANCE } from '../shared/balance';
 import { Decor, Terrain } from './terrain/types';
 import { isWaterTile } from './terrain/elevation';
@@ -318,7 +318,12 @@ export function buildDemoCity(city: City, seed: number): DemoCity {
 
   // A showcase shouldn't have empty blocks: build out every lot growth hasn't reached yet,
   // then simulate a month so people move in and utilities catch up.
-  fillLots(city, rng);
+  // Downtown grows up (D-108): the office blocks inside the avenue ring are redeveloped, their
+  // mid-rise offices cleared so the build-out raises office towers on them.
+  const core = { x0: x0 + DOWNTOWN[0] * PITCH, y0: y0 + DOWNTOWN[0] * PITCH, x1: x0 + DOWNTOWN[1] * PITCH, y1: y0 + DOWNTOWN[1] * PITCH };
+  const inCore = (x: number, y: number) => x > core.x0 && y > core.y0 && x < core.x1 && y < core.y1;
+  redevelop(w, (b) => inCore(b.x, b.y) && w.zone[w.index(b.x, b.y)] === ZoneType.CommercialHigh);
+  fillLots(city, rng, inCore);
   refreshCity(w);
   // The build-out jumps demand: add plants and towers until everyone is supplied.
   for (let k = 0; k < 60 && serveIslands(city, utilitySlots, rng); k++);
@@ -378,7 +383,18 @@ function shoreParks(city: City, ix: number, iy: number, place: (id: BuildingId, 
  * where a whole square of the zone is free (towers downtown, factories in industry), otherwise
  * the zone's best 1×1 (houses on the outskirts mix levels 1 and 2).
  */
-function fillLots(city: City, rng: () => number) {
+/** Clear the finished grown 1×1 buildings `pick` chooses (their lots stay zoned). */
+function redevelop(w: World, pick: (b: BuildingInstance) => boolean) {
+  for (const b of [...w.buildings.values()]) {
+    const d: BuildingDef = BUILDINGS[b.def];
+    if (b.grown && b.construction === 0 && d.size.w === 1 && d.size.h === 1 && pick(b)) w.removeBuilding(b.id, 1, 1);
+  }
+}
+
+/** Office towers among the top-level 2×2 commercial buildings (for the downtown skyline). */
+const SKYLINE: readonly BuildingId[] = ['office_tower', 'office_tower', 'hotel'];
+
+function fillLots(city: City, rng: () => number, downtown: (x: number, y: number) => boolean = () => false) {
   const w = city.world;
   const free = (x: number, y: number, z: number) =>
     w.inBounds(x, y) && w.zone[w.index(x, y)] === z && w.building[w.index(x, y)] === -1;
@@ -402,9 +418,11 @@ function fillLots(city: City, rng: () => number) {
       const density = ZONE_DENSITY[z];
       const square = free(x + 1, y, z) && free(x, y + 1, z) && free(x + 1, y + 1, z);
       const big = [3, 2].map((level) => zonedBuildings(letter, density, level, 2)).find((ids) => ids.length > 0) ?? [];
-      // Most free squares become one big building; some stay small for variety.
-      if (square && big.length > 0 && rng() < 0.75) {
-        build(big[Math.floor(rng() * big.length)], x, y);
+      // Most free squares become one big building; some stay small for variety. Downtown's office
+      // squares all become towers.
+      const skyline = z === ZoneType.CommercialHigh && downtown(x, y);
+      if (square && big.length > 0 && (skyline || rng() < 0.75)) {
+        build(skyline ? SKYLINE[Math.floor(rng() * SKYLINE.length)] : big[Math.floor(rng() * big.length)], x, y);
         continue;
       }
       const top = startLevel(letter, density) + (rng() < 0.6 ? 1 : 0);

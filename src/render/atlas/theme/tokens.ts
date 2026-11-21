@@ -135,7 +135,7 @@ export const SUNNY_AFTERNOON: ArtTheme = {
     shadedBase: -0.36,
     top: 0.14,
     ao: 'rgba(18, 22, 38, 0.34)',
-    aoHeight: 6,
+    aoHeight: 9,
     rim: 'rgba(255, 250, 236, 0.55)',
     shadow: 'rgba(22, 34, 58, 0.30)',
     shadowSoft: 'rgba(22, 34, 58, 0)',

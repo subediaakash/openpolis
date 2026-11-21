@@ -31,7 +31,7 @@ export function litWall(iso: IsoFrame, face: Face, at: number, a0: number, a1: n
 
 /** Dark gradient at the foot of a wall, where it meets the ground (or a terrace). */
 export function occlusion(iso: IsoFrame, face: Face, at: number, a0: number, a1: number, z: number, height = LIGHT.aoHeight, strength = 1) {
-  const g = iso.wallGradient(face, at, a0, a1, z, z + height, alpha(LIGHT.ao, 0), alpha(LIGHT.ao, 0.34 * strength));
+  const g = iso.wallGradient(face, at, a0, a1, z, z + height, alpha(LIGHT.ao, 0), alpha(LIGHT.ao, 0.46 * strength));
   iso.wall(face, at, a0, a1, z, z + height, g);
 }
 
@@ -56,14 +56,13 @@ export function rimLight(iso: IsoFrame, b: Box, z0: number, z1: number) {
 
 /**
  * Soft shadow a box of height `h` casts on the ground: it falls to the right (+u, −v) and
- * fades with distance. Clipped to `clip` (the lot), so it never darkens a neighbour.
+ * fades with distance, a darker core inside a wider soft edge (the depth pass). Clipped to
+ * `clip` (the lot), so it never darkens a neighbour.
  */
 export function castShadow(iso: IsoFrame, b: Box, h: number, clip: Box, strength = 1) {
   const c = iso.ctx;
   // Shadow length in tiles: tall buildings throw longer shadows, capped by the frame.
-  const len = Math.min(0.9, 0.12 + h / 90);
-  const du = len * 0.75;
-  const dv = -len * 0.45;
+  const len = Math.min(1.1, 0.2 + h / 70);
   c.save();
   c.beginPath();
   const q = [iso.p(clip.u0, clip.v0), iso.p(clip.u1, clip.v0), iso.p(clip.u1, clip.v1), iso.p(clip.u0, clip.v1)];
@@ -72,33 +71,65 @@ export function castShadow(iso: IsoFrame, b: Box, h: number, clip: Box, strength
   c.closePath();
   c.clip();
   // The footprint swept along the light direction: the hull of the base and the moved base.
-  const pts = [
-    iso.p(b.u1, b.v0),
-    iso.p(b.u1 + du, b.v0 + dv),
-    iso.p(b.u1 + du, b.v1 + dv),
-    iso.p(b.u0 + du, b.v1 + dv),
-    iso.p(b.u0, b.v1),
-    iso.p(b.u1, b.v1),
-  ];
-  const [sx, sy] = iso.p(b.u1, (b.v0 + b.v1) / 2);
-  const [ex, ey] = iso.p(b.u1 + du, (b.v0 + b.v1) / 2 + dv);
-  const g = c.createLinearGradient(sx, sy, ex, ey);
-  g.addColorStop(0, alpha(LIGHT.shadow, 0.3 * strength));
-  g.addColorStop(1, alpha(LIGHT.shadow, 0));
-  c.beginPath();
-  c.moveTo(pts[0][0], pts[0][1]);
-  for (let k = 1; k < pts.length; k++) c.lineTo(pts[k][0], pts[k][1]);
-  c.closePath();
-  c.fillStyle = g;
-  c.fill();
+  const layer = (reach: number, spread: number, a: number) => {
+    const du = reach * 0.75;
+    const dv = -reach * 0.45;
+    const pts = [
+      iso.p(b.u1, b.v0 - spread),
+      iso.p(b.u1 + du + spread, b.v0 + dv - spread),
+      iso.p(b.u1 + du + spread, b.v1 + dv + spread),
+      iso.p(b.u0 + du, b.v1 + dv + spread),
+      iso.p(b.u0, b.v1),
+      iso.p(b.u1, b.v1),
+    ];
+    const [sx, sy] = iso.p(b.u1, (b.v0 + b.v1) / 2);
+    const [ex, ey] = iso.p(b.u1 + du, (b.v0 + b.v1) / 2 + dv);
+    const g = c.createLinearGradient(sx, sy, ex, ey);
+    g.addColorStop(0, alpha(LIGHT.shadow, a * strength));
+    g.addColorStop(1, alpha(LIGHT.shadow, 0));
+    c.beginPath();
+    c.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k < pts.length; k++) c.lineTo(pts[k][0], pts[k][1]);
+    c.closePath();
+    c.fillStyle = g;
+    c.fill();
+  };
+  layer(len * 1.18, 0.04, 0.16);
+  layer(len, 0, 0.34);
   c.restore();
+  groundOcclusion(iso, b, strength);
   contactShadow(iso, b, strength);
+}
+
+/**
+ * Ambient occlusion on the ground round a building's foot: a soft dark band fading outward
+ * along the two base edges the camera sees, so a building sits in the ground, not on it.
+ */
+export function groundOcclusion(iso: IsoFrame, b: Box, strength = 1, reach = 0.14) {
+  const c = iso.ctx;
+  const band = (pts: readonly (readonly [number, number])[], from: readonly [number, number], to: readonly [number, number]) => {
+    const g = c.createLinearGradient(from[0], from[1], to[0], to[1]);
+    g.addColorStop(0, alpha(LIGHT.shadow, 0.26 * strength));
+    g.addColorStop(1, alpha(LIGHT.shadow, 0));
+    c.beginPath();
+    c.moveTo(pts[0][0], pts[0][1]);
+    for (let k = 1; k < pts.length; k++) c.lineTo(pts[k][0], pts[k][1]);
+    c.closePath();
+    c.fillStyle = g;
+    c.fill();
+  };
+  const mu = (b.u0 + b.u1) / 2;
+  const mv = (b.v0 + b.v1) / 2;
+  // Along the front-left foot (v = v1), outward toward +v.
+  band([iso.p(b.u0 - reach * 0.5, b.v1), iso.p(b.u1, b.v1), iso.p(b.u1, b.v1 + reach), iso.p(b.u0 - reach * 0.5, b.v1 + reach)], iso.p(mu, b.v1), iso.p(mu, b.v1 + reach));
+  // Along the front-right foot (u = u1), outward toward +u.
+  band([iso.p(b.u1, b.v0 - reach * 0.5), iso.p(b.u1, b.v1), iso.p(b.u1 + reach, b.v1), iso.p(b.u1 + reach, b.v0 - reach * 0.5)], iso.p(b.u1, mv), iso.p(b.u1 + reach, mv));
 }
 
 /** Tight dark line where a box stands on the ground: anchors it so it doesn't float. */
 export function contactShadow(iso: IsoFrame, b: Box, strength = 1) {
   const e = 0.035;
-  iso.poly([iso.p(b.u0 - e, b.v1), iso.p(b.u1, b.v1), iso.p(b.u1, b.v0 - e), iso.p(b.u1 + e * 1.6, b.v0), iso.p(b.u1 + e * 1.6, b.v1 + e * 1.6), iso.p(b.u0, b.v1 + e * 1.6)], alpha(LIGHT.shadow, 0.28 * strength));
+  iso.poly([iso.p(b.u0 - e, b.v1), iso.p(b.u1, b.v1), iso.p(b.u1, b.v0 - e), iso.p(b.u1 + e * 1.6, b.v0), iso.p(b.u1 + e * 1.6, b.v1 + e * 1.6), iso.p(b.u0, b.v1 + e * 1.6)], alpha(LIGHT.shadow, 0.36 * strength));
 }
 
 /** Soft round shadow under a standing object (tree, lamp, person) at frame point (x, y). */

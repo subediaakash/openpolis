@@ -246,7 +246,8 @@ Mobile first; desktop unchanged unless noted.
 - [ ] **D + E. Transport** → [specs/transport.md](specs/transport.md) (D-069), steps T1–T7:
   - [x] T1 Road-type table (`sim/roadTypes.ts`) with every system reading it; **Avenue** (4 lanes, planted median, brick footpaths, median trees and lamps); upgrade in place paying the difference; road art split into `render/atlas/roads/` (one file per type)
   - [x] T2 Boulevard (6 lanes) and Expressway (8 lanes) as 2-tile one-way carriageways (`World.lane`), ramps (expressways join only ramps and highways), pedestrian streets (walkers only), pavement styles (concrete, brick, granite setts, promenade; `World.pave`), turnarounds at wide-road ends, one-way routing for commutes and cars, Road picker UI; avenue trees redesigned after user feedback
-  - [ ] **Next (user requests):** Move tool (pick up a building and place it elsewhere); camera: rotate by dragging (middle mouse / Alt) with an animated quarter turn
+  - [x] Move tool (pick up a building and place it elsewhere; phone fixes 2026-11-21)
+  - [ ] **Next (user requests):** camera: rotate by dragging (middle mouse / Alt) with an animated quarter turn
   - [ ] T3 Flyovers, interchange prefabs, truss / cable-stayed / suspension bridges, tunnels
   - [ ] **Curved roads** (D-089, spec: transport.md "Curved roads"): C1 45° diagonal strips with smoothed vehicle paths → C2 rounded corners → C3 Curve drag mode and arcs for wide roads
   - [x] Smarter junction control, first part (D-088): give-way by default, lights only where the load needs them
@@ -270,7 +271,8 @@ Mobile first; desktop unchanged unless noted.
 - [x] Modern architecture kit (`atlas/modern/`: lofts, facet lighting, glass and fabric skins, vaults, wheels, coaster track) and one file per building (D-096)
 - [x] Landmarks: Sky Tower, Sail Hotel, Observation Wheel, Theme Park (D-096)
 - [x] Modern office tower, condo tower, hotel, shopping complex and train station (D-096)
-- [ ] Modern restyle of the remaining buildings: homes, shops, offices, apartments, services, utilities and energy
+- [x] Warm modern homes, apartments, mid-rise offices and towers (D-108, D-109)
+- [ ] Modern restyle of the remaining buildings: shops, industry, services, utilities and energy
 - [ ] Restyle roads to match
 - [x] Ambient life: swaying trees, night window lights, beacons, fountains, birds, cloud shadows (D-072)
 
