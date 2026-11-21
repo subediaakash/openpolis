@@ -2,6 +2,13 @@
 
 Newest first. One entry per work session.
 
+## 2026-11-21: Engagement H3: citizen stories and the city newspaper (D-102)
+- **Newspaper:** `game/news/newsroom.ts` (`Newsroom`: `open` for founding / welcome back / showcase; events for stage, goal, research, lifestyle, openings, fires, brownout; `onDay` for population marks, gridlock, smog, budget, weekly review; 40 stories kept; seeded headline variants). `Game` reports facts where it already handles them and emits `news`; `newsAtom`; `NewsButton` (unread dot, paper-and-ink popover, lead story, "Show on the map").
+- **Residents:** `game/news/people.ts` (`residentsOf`, `residentName`): up to three per home with original syllable names, ages, roles from the city's jobs and unemployment, and a mood line; shown as "Who lives here" in the info panel and quoted in the weekly review.
+- **Wording fix:** incident toasts and stories say "the Walk-up Apartments" instead of "a Walk-up Apartments".
+- `rewardText` in `game/goals.ts` for goal stories.
+- Checked in headless Chrome on /demo at 1440×900 and 390×844 (paper with a fire story and the welcome page; a walk-up's three residents). 10 new tests (`tests/news.test.ts`); typecheck and lint clean.
+
 ## 2026-11-21: Engagement H2: incidents you can watch (D-101)
 - **Vehicles:** fire trucks, police cars and ambulances drawn with traffic (`AgentRenderer` takes an emergency list; flashing light bars in `agents.beacons` over the night tint). **Bug fixed:** emergency kinds were missing from the vehicle atlas (`VEHICLE_KINDS`), hidden by an `as Record` cast; the map is now built per kind (`VEHICLE_VARIANT_COUNT`, one paint variant for emergency vehicles) with no cast.
 - **Fires:** `render/fx/Fires.ts` (flames from a new `fx_flame` frame, additive; dark smoke, steam while a truck works; heat from age and work). **Badges:** fire, theft and patient pins in `Indicators` (most urgent first); `Bubbles.mute` for buildings with one. `Renderer.setIncidents(marks, fires)`.

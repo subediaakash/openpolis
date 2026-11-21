@@ -20,7 +20,8 @@ const nameOf = (b: BuildingInstance) => {
   return d.name;
 };
 const article = (word: string) => (/^[aeiou]/i.test(word) ? 'an' : 'a');
-const aName = (b: BuildingInstance) => `${article(nameOf(b))} ${nameOf(b)}`;
+/** "the Walk-up Apartments", "the Cottage": reads right for singular and plural building names. */
+const theName = (b: BuildingInstance) => `the ${nameOf(b)}`;
 
 // ---------------------------------------------------------------- map
 
@@ -79,16 +80,16 @@ const unreachedKey = (kind: IncidentKind, building: number) => `incident-${kind}
 
 /** Spoken name of each incident kind, for "nobody can reach …" lines. */
 const UNREACHED: Readonly<Record<IncidentKind, (b: BuildingInstance) => string>> = {
-  fire: (b) => `No fire truck can reach the fire at ${aName(b)}. Build a Fire Station nearby, on a connected road.`,
-  theft: (b) => `No police car can reach a theft at ${aName(b)}. Build a Police Station nearby.`,
-  illness: (b) => `No ambulance can reach a sick resident at ${aName(b)}. Build a Clinic or Hospital nearby.`,
-  injury: (b) => `No hospital ambulance can reach people hurt in the fire at ${aName(b)}. Clinics can't treat injuries: build a Hospital.`,
+  fire: (b) => `No fire truck can reach the fire at ${theName(b)}. Build a Fire Station nearby, on a connected road.`,
+  theft: (b) => `No police car can reach a theft at ${theName(b)}. Build a Police Station nearby.`,
+  illness: (b) => `No ambulance can reach a sick resident at ${theName(b)}. Build a Clinic or Hospital nearby.`,
+  injury: (b) => `No hospital ambulance can reach people hurt in the fire at ${theName(b)}. Clinics can't treat injuries: build a Hospital.`,
 };
 
 const MISSED: Readonly<Record<Exclude<IncidentKind, 'fire'>, (b: BuildingInstance) => string>> = {
-  theft: (b) => `${capitalise(aName(b))} was robbed and no police came. Its people feel less safe for a month.`,
-  illness: (b) => `Nobody came for a sick resident at ${aName(b)}. Its people trust the city's care less for a month.`,
-  injury: (b) => `People hurt in the fire at ${aName(b)} weren't treated in time. Build a Hospital within reach.`,
+  theft: (b) => `Thieves hit ${theName(b)} and no police came. Its people feel less safe for a month.`,
+  illness: (b) => `Nobody came for a sick resident at ${theName(b)}. Its people trust the city's care less for a month.`,
+  injury: (b) => `People hurt in the fire at ${theName(b)} weren't treated in time. Build a Hospital within reach.`,
 };
 
 function capitalise(s: string): string {
@@ -113,7 +114,7 @@ export class IncidentFeed {
       switch (e.type) {
         case 'started':
           if (e.kind === 'fire') {
-            notices.push({ kind: 'error', message: `Fire at ${aName(e.building)}! Click to watch the fire trucks.`, focus: e.building.id, sound: 'alarm' });
+            notices.push({ kind: 'error', message: `Fire at ${theName(e.building)}! Click to watch the fire trucks.`, focus: e.building.id, sound: 'alarm' });
           }
           break;
         case 'unreached':
@@ -121,7 +122,7 @@ export class IncidentFeed {
           break;
         case 'resolved':
           resolved.push(unreachedKey(e.kind, e.building.id));
-          if (e.kind === 'fire') notices.push({ kind: 'info', message: `The fire at ${aName(e.building)} is out.`, focus: e.building.id });
+          if (e.kind === 'fire') notices.push({ kind: 'info', message: `The fire at ${theName(e.building)} is out.`, focus: e.building.id });
           break;
         case 'missed':
           resolved.push(unreachedKey(e.kind, e.building.id));

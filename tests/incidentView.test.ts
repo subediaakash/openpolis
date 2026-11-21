@@ -81,7 +81,7 @@ describe('incident notices', () => {
     const started = feed.read([{ type: 'started', kind: 'fire', building: b }], 0);
     expect(started.notices).toHaveLength(1);
     expect(started.notices[0]).toMatchObject({ kind: 'error', focus: b.id, sound: 'alarm' });
-    expect(started.notices[0].message).toMatch(/^Fire at a Cottage!/);
+    expect(started.notices[0].message).toMatch(/^Fire at the Cottage!/);
 
     const unreached = feed.read([{ type: 'unreached', kind: 'fire', building: b }], 0);
     expect(unreached.notices[0].key).toBe(`incident-fire-${b.id}`);

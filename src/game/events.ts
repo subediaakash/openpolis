@@ -13,6 +13,8 @@ import type { AirReport } from '../sim/systems/air';
 import type { TechId } from '../sim/research';
 import type { GoalId } from '../sim/goals/catalog';
 import type { IncidentKind } from '../sim/systems/incidents';
+import type { Edition } from './news/newsroom';
+import type { Resident } from './news/people';
 import type { MaterialsReport } from '../sim/systems/materials';
 import type { ToolId } from './tools';
 
@@ -49,6 +51,8 @@ export interface GameEventMap {
   budget: BudgetInfo;
   /** Building shown in the info panel, or null when it's closed. */
   inspect: InspectInfo | null;
+  /** The city newspaper (docs/specs/news.md). */
+  news: Edition;
 }
 
 /** Day/night look: follow the clock, or stay in daylight or at night. */
@@ -208,6 +212,8 @@ export interface InspectInfo {
   incident: IncidentInfo | null;
   /** Fire, police and health stations: vehicles out and this month's calls. */
   responder: ResponderInfo | null;
+  /** Homes: up to three named residents (docs/specs/news.md). */
+  residents: readonly Resident[];
 }
 
 export interface IncidentInfo {

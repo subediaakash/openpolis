@@ -9,6 +9,7 @@ import { useDismiss, useOverlay } from '../overlay/overlay';
 import { useStartTour } from '../tour/tourState';
 import { SaveStatus } from './SaveStatus';
 import { StageChip } from './StageChip';
+import { NewsButton } from './NewsButton';
 import { AlertsButton } from './AlertsButton';
 import { aqiBand } from '../../sim/systems/air';
 
@@ -394,6 +395,7 @@ function PhoneTopBar() {
           {speedGlyph(paused ? 1 : speed)}
         </button>
       </div>
+      <NewsButton />
       <AlertsButton />
     </div>
   );
@@ -535,6 +537,7 @@ function WideTopBar({ cityName, onNewCity, onSave, beforeLogout }: TopBarProps) 
           </svg>
         </button>
       </Fold>
+      <NewsButton />
       <AlertsButton />
       <button type="button" className="icon-button" title="Tour the basics" aria-label="Tour the basics" onClick={startTour}>
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">

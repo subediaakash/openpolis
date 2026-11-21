@@ -237,6 +237,32 @@ export function InfoPanel() {
       </div>
       {info.lifestyle && <p className="info-note">{info.lifestyle.note}</p>}
 
+      {info.residents.length > 0 && (
+        <section className="info-section">
+          <h3 className="info-section-title">Who lives here</h3>
+          <ul className="info-residents">
+            {info.residents.map((r) => (
+              <li key={r.name} className="info-resident">
+                <span className="info-resident-avatar" aria-hidden="true">
+                  {r.name
+                    .split(' ')
+                    .map((part) => part[0])
+                    .join('')}
+                </span>
+                <span className="info-resident-body">
+                  <strong>{r.name}</strong>
+                  <span className="info-resident-meta">
+                    {r.age} · {r.roleText}
+                    {info.commuteMinutes !== null && r.role !== 'retired' && r.role !== 'jobless' ? ` · ${Math.round(info.commuteMinutes)} min commute` : ''}
+                  </span>
+                  <span className="info-resident-says">“{r.says}”</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {needs.length > 0 && (
         <section className="info-section">
           <h3 className="info-section-title">Needs · worst first</h3>

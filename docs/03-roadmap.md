@@ -240,7 +240,7 @@ We focus on **one** terrain and make it look great before adding presets or menu
 - [ ] **H. Engagement** (user order, 2026-11-21): one feature per branch and PR
   - [x] H1 City goals → [specs/goals.md](specs/goals.md) (D-100): four optional goals per stage, instant and held, cash rewards and landmarks earned early; Goals panel in a left rail with Citizens say; claim flow; one unlock rule (`sim/unlocks.ts`)
   - [x] H2 Incidents you can watch (D-101): emergency vehicles with flashing light bars, flames and smoke on burning buildings, fire/theft/patient badges, fire news you can click to watch, info-panel status and station calls, dev-console triggers
-  - [ ] H3 Citizen stories and a city newspaper
+  - [x] H3 Citizen stories and a city newspaper → [specs/news.md](specs/news.md) (D-102): The {City} Courier from real events (stages, goals, fires, openings, budgets, gridlock, smog, weekly review with a resident's quote); named residents in homes' info panels
 
 ## Art Track (runs alongside the phases; D-066)
 

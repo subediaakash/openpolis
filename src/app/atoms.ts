@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import type { BudgetInfo, CityInfo, DayNightMode, DebugStats, InspectInfo, Notice, ToolPreviewInfo } from '../game/events';
+import type { Edition } from '../game/news/newsroom';
 import type { Game } from '../game/Game';
 import type { ToolId } from '../game/tools';
 import type { SaveStatus } from '../save/CitySaver';
@@ -43,6 +44,8 @@ export const cityAtom = atom<CityInfo | null>(null);
 export const inspectAtom = atom<InspectInfo | null>(null);
 export const dayNightAtom = atom<DayNightMode>('cycle');
 export const budgetAtom = atom<BudgetInfo | null>(null);
+/** The city newspaper (docs/specs/news.md); null before a city is open. */
+export const newsAtom = atom<Edition | null>(null);
 
 export const trafficViewAtom = atom(false);
 export const happinessViewAtom = atom(false);

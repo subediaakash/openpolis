@@ -17,7 +17,7 @@ import { Simulation } from '../sim/core/Simulation';
 import type { DayOutcome } from '../sim/core/System';
 import { findEntrance } from '../sim/systems/access';
 import { nextStage, STAGES, unlockedAt } from '../sim/stages';
-import type { GoalId } from '../sim/goals/catalog';
+import { goalDef, type GoalId } from '../sim/goals/catalog';
 import { claimGoal, emptyGoals } from '../sim/goals/state';
 import { lockOf } from '../sim/unlocks';
 import { stageRequirements } from '../sim/progression';
@@ -26,8 +26,9 @@ import { currentTech, researchRate, TECHS } from '../sim/research';
 import { materialStorage } from '../sim/systems/materials';
 import { collectTaxes, townHall } from '../sim/systems/budget';
 import { inspectInfo } from './inspect';
-import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyMessage } from './goals';
+import { buildingLocks, claimMessage, goalsInfo, lockInfo, readyMessage, rewardText } from './goals';
 import { fireSites, IncidentFeed, incidentMarks } from './incidents';
+import { Newsroom, type DayFacts } from './news/newsroom';
 import type { IncidentEvent, IncidentKind } from '../sim/systems/incidents';
 import { aqiBand } from '../sim/systems/air';
 import { isWaterTerrain } from '../render/transitions';
@@ -163,11 +164,15 @@ export class Game {
   /** Player edits so far (roads, zones, buildings, taxes), for save dirty tracking. */
   private edits = 0;
   private readonly options: GameOptions;
+  /** The city newspaper (docs/specs/news.md): written while playing, not saved. */
+  private readonly newsroom: Newsroom;
 
   private constructor(sim: Simulation, renderer: Renderer, options: GameOptions) {
     this.sim = sim;
     this.city = sim.city;
     this.options = options;
+    this.newsroom = new Newsroom(options.name, sim.world.seed);
+    this.newsroom.open(this.dayFacts(), options.name, STAGES[sim.city.stage].name, options.demo ? 'showcase' : options.save ? 'saved' : 'new');
     this.renderer = renderer;
     this.input = new InputController(renderer.app.canvas, renderer.camera, {
       onPointer: (p) => this.updateHover(p),
@@ -477,6 +482,7 @@ export class Game {
       this.renderer.refreshWorld(rect);
       this.events.emit('funds', this.city.funds);
       this.buildFeedback(p, result.tiles ?? [], debris);
+      if (p.kind === 'place') this.reportOpening(p.plan.building, p.plan.origin);
       if (p.kind === 'zone') this.warnUnreachableZones(result.tiles ?? []);
       // Track changes the train network the commute model plans over, like roads.
       this.afterWorldChange(p.kind === 'road' || p.kind === 'clear' || p.kind === 'rail');
@@ -557,6 +563,8 @@ export class Game {
     this.showMilestones(out);
     this.announceGoals();
     this.drawIncidents();
+    this.newsroom.onDay(this.dayFacts(out.budget));
+    this.emitNews();
     this.explainWaitingZones();
     // Congestion changes every day, even when no buildings did.
     if (out.changed.length === 0) this.refreshDataView();
@@ -597,15 +605,19 @@ export class Game {
       this.sound.play('build');
       const goals = this.city.goals.on ? ' New goals to try.' : '';
       this.notify('milestone', `Your city is now a ${def.name}!${unlocked.length ? ` New: ${unlocked.join(', ')}.` : ''} ${def.news}${goals}`.trim(), `stage-${out.stage}`);
+      this.newsroom.stage(def.name, def.news);
     }
     if (out.research) {
       this.sound.play('coin');
       this.notify('milestone', `Research finished: ${out.research.name}. ${out.research.effect}.`, `research-${out.research.id}`);
+      this.newsroom.research(out.research.name, out.research.effect);
     }
     if (out.lifestyle === Lifestyle.Comfortable) {
       this.notify('milestone', 'Residents are moving up: the first homes are Comfortable. They pay more tax, and they want a hospital nearby.', 'lifestyle-1');
+      this.newsroom.lifestyle('Comfortable');
     } else if (out.lifestyle === Lifestyle.Prosperous) {
       this.notify('milestone', 'The first homes are Prosperous! They pay the most tax, and they want a university.', 'lifestyle-2');
+      this.newsroom.lifestyle('Prosperous');
     }
   }
 
@@ -614,7 +626,11 @@ export class Game {
     const ready = this.sim.goals.takeReady();
     if (ready.length === 0) return;
     this.sound.play('build');
-    for (const id of ready) this.notify('milestone', readyMessage(id), `goal-${id}`);
+    for (const id of ready) {
+      this.notify('milestone', readyMessage(id), `goal-${id}`);
+      this.newsroom.goal(goalDef(id).title, rewardText(id));
+    }
+    this.emitNews();
   }
 
   /**
@@ -724,8 +740,24 @@ export class Game {
       if (n.sound) this.sound.play(n.sound);
       this.notify(n.kind, n.message, n.key, n.focus);
     }
+    this.reportIncidents(events);
     const burned = events.flatMap((e) => (e.type === 'burned' ? [e.building] : []));
     if (burned.length > 0) this.showBurned(burned);
+  }
+
+  /** Fires make the paper: breaking out, put out, or burning a building down. */
+  private reportIncidents(events: readonly IncidentEvent[]) {
+    let news = false;
+    for (const e of events) {
+      const name = BUILDINGS[e.building.def].name;
+      if (e.type === 'burned') this.newsroom.burned(name);
+      else if (e.kind !== 'fire') continue;
+      else if (e.type === 'started') this.newsroom.fireStarted(name, e.building.id);
+      else if (e.type === 'resolved') this.newsroom.fireOut(name, e.building.id);
+      else continue;
+      news = true;
+    }
+    if (news) this.emitNews();
   }
 
   /** Buildings a fire took: cleared from the map now, with dust and one toast. */
@@ -740,7 +772,7 @@ export class Game {
     const name = BUILDINGS[burned[0].def].name;
     this.notify(
       'error',
-      burned.length === 1 ? `A fire destroyed a ${name}. Build a Fire Station nearby.` : `${burned.length} buildings burned down. Build Fire Stations to cover the city.`,
+      burned.length === 1 ? `A fire destroyed the ${name}. Build a Fire Station nearby.` : `${burned.length} buildings burned down. Build Fire Stations to cover the city.`,
       'fire',
     );
     this.afterSimChange();
@@ -973,6 +1005,8 @@ export class Game {
     if (p.short === 0) this.resolve('brownout');
     if (p.short === 0 || this.brownoutDay === clockDay) return;
     this.brownoutDay = clockDay;
+    this.newsroom.brownout(Math.floor(this.city.hour), p.short);
+    this.emitNews();
     const hour = String(Math.floor(this.city.hour)).padStart(2, '0');
     const cause = p.sources.solar === 0 && p.sources.wind < 1 && p.storage === 0 ? ' Solar makes nothing at night;' : '';
     this.notify(
@@ -1278,9 +1312,56 @@ export class Game {
   }
 
   /** A toast; with a `key` it is also kept in the alerts inbox until resolved or dismissed. */
-  private notify(kind: Notice['kind'], message: string, key?: string, focus?: number) {
+  // ---------------------------------------------------------------- news
+
+  /** Today's numbers for the newspaper (docs/specs/news.md). */
+  private dayFacts(budget: DayOutcome['budget'] = null): DayFacts {
+    const needs = this.sim.needs.report;
+    // The week's quote comes from a home with the city's most common complaint.
+    const homeOf = (id: number) => {
+      const b = this.world.buildings.get(id);
+      return b && BUILDINGS[b.def].category === 'residential' ? b : undefined;
+    };
+    const complaint = needs.complaints.find((c) => homeOf(c.building) !== undefined);
+    const home = complaint ? homeOf(complaint.building) : undefined;
+    return {
+      day: this.city.day,
+      date: this.dateText(),
+      population: cityStats(this.world).population,
+      happiness: needs.happiness,
+      jammedTiles: this.sim.commute.report.jammedTiles,
+      aqi: this.sim.air.report.cityAqi,
+      voice: complaint && home ? { building: home.id, home: BUILDINGS[home.def].name, text: complaint.text } : null,
+      budget: budget ? { income: budget.income, expenses: budget.expenses, net: budget.net } : null,
+    };
+  }
+
+  /** A landmark or big service was placed: it makes the paper. */
+  private reportOpening(id: BuildingId, at: TilePos) {
+    const placed = this.world.building[this.world.index(at.x, at.y)];
+    if (placed === -1) return;
+    this.newsroom.opened(id, buildingDef(id).name, placed);
+    this.emitNews();
+  }
+
+  /** Push the paper to listeners (also used by the UI bridge on connect). */
+  emitNews() {
+    this.events.emit('news', this.newsroom.edition());
+  }
+
+  /** The player opened the paper. */
+  markNewsRead() {
+    this.newsroom.markRead();
+    this.emitNews();
+  }
+
+  private dateText(): string {
     const { year, month, dayOfMonth } = this.city.date;
-    const date = `${MONTH_NAMES[month]} ${dayOfMonth}, Y${year}`;
+    return `${MONTH_NAMES[month]} ${dayOfMonth}, Y${year}`;
+  }
+
+  private notify(kind: Notice['kind'], message: string, key?: string, focus?: number) {
+    const date = this.dateText();
     this.events.emit('notice', { id: ++noticeSeq, kind, message, ...(key && { key, date }), ...(focus !== undefined && { focus }) });
   }
 
