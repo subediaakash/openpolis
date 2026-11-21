@@ -4764,8 +4764,13 @@ summary {
   width: min(360px, calc(100vw - 24px));
   max-height: calc(100dvh - 120px);
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 12px;
   font-size: 12px;
+  /* It lives inside the top bar, which keeps its labels on one line: alerts must wrap. */
+  white-space: normal;
+  /* Opaque like the toasts (D-105): the city behind made long alerts hard to read. */
+  background: linear-gradient(var(--bg-panel), var(--bg-panel)), var(--bg-app);
 }
 .alerts-head {
   display: flex;
@@ -4820,7 +4825,10 @@ summary {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  /* A grid item won't shrink below its text without this, pushing the × off the edge. */
+  min-width: 0;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 .alert-date {
   color: var(--text-dim);

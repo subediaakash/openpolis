@@ -7,6 +7,7 @@ Newest first. One entry per work session.
 - **HUD:** "Holding happiness back" in Citizens say (`CitizensPanel.tsx`), need words shared in `hud/needWords.ts`; Happiness map button.
 - **Toasts:** opaque; phone banner over the top bar, one at a time; grouped goal toasts, none while Goals is open, claim toast only for unlocks (`Notice.show`, `goalsOpenAtom`).
 - Checked in Chrome on /demo at 1440×900: 87% happy, rows Parks −3, Commute −3, Transit −3, Clean air −2, Safety −1, Small things −1 (= −13%); Show me opens the home, the map button turns on the happiness view. At 390×844 (touch): the panel scrolls within its height; a toast sits exactly over the top bar (top 8, 48 px) above the rail (64 px). No page errors. 366 tests pass; typecheck and lint clean.
+- **Alerts popover:** long alerts ran off its right edge: it sits inside the top bar and inherited `white-space: nowrap`. Now it wraps (`white-space: normal`, `min-width: 0` on the text) and is opaque like the toasts. Checked at 1440×900 and 390×844: no sideways overflow, × inside the box.
 - **Next idea:** a map per need ("where are parks missing"), from the same scores.
 
 ## 2026-11-21: Atlas memory: 399 → 141 MB (D-104)
